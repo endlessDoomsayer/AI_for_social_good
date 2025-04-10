@@ -40,4 +40,13 @@ Practically:
 
 # PART 2 (CSP)
 
-Nothing right now
+We can model the constraints and use CSP or even an informed search if we can obtain a good heuristic and test to see which one performs better (in general it should be the heuristic one since we have problem-specific heuristics).
+CSP involves discrete variables with finite domain (since every minute can be used).
+⇒ tutti i CSP possono essere convertiti in CSP con constraints binari: è un timetabling problem
+which class is offered when and where?
+HOW TO SOLVE IT:
+- Full search
+- Backtracking with some improvements on how to choose variables and order, backjumping, no-good, forward checking, constraint propagation (arc consistency)
+- Local search: utile se vogliamo fare delle modifiche minime al volo quando cambiano dei requirements
+Anche un SOFT CSP: ogni assignment di valori è associato a un preference value. Di fatto invece che dire “Non posso fare questa cosa” dico “se faccio questa cosa a questa ora è meglio”. Si potrebbe vedere come un Weighted CSP o anche un multi-criteria problem (vogliamo massimizzare/minimizzare due cose assieme)… attenzione che viene fuori anche BRANCH AND BOUND.
+Vedi anche CP net

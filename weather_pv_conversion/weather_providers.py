@@ -1,6 +1,11 @@
 from data_classes import *
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import openmeteo_requests
+import requests_cache
+from retry_requests import retry
+import numpy as np
+import pandas as pd
 import abc # Abstract Base Classes
 
 # --- Weather API Integration Framework ---
@@ -12,7 +17,7 @@ class WeatherProvider(abc.ABC):
         self.api_key = api_key
 
     @abc.abstractmethod
-    def get_weather_data(self, location: Location, start_time_utc: datetime, end_time_utc: datetime | None = None, granularity: TimeGranularity = 'hourly') -> list[WeatherData]:
+    def get_weather_data(self, location: Location, start_time_utc: datetime, end_time_utc: datetime | None = None) -> pd.DataFrame | None:
         """
         Fetches weather data for a given location and time range.
 
@@ -34,6 +39,11 @@ class WeatherProvider(abc.ABC):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def requires_api_key(self) -> bool:
+        """Indicates if this provider typically requires an API key."""
+        raise NotImplementedError
+    
     def _check_api_key_available(self):
         """
         Helper method used by concrete classes before making API calls
@@ -53,195 +63,131 @@ class OpenMeteoProvider(WeatherProvider):
 
     # --- Define requested variables for Open-Meteo ---
     # Using instantaneous versions where requested and available hourly
-    HOURLY_VARS = (
-        "temperature_2m,"
-        "precipitation_probability,"
-        "wind_speed_10m,"
-        "shortwave_radiation_instant,"    # Instant GHI
-        "diffuse_radiation_instant,"      # Instant DHI
-        "direct_normal_irradiance_instant," # Instant DNI
-        "cloud_cover,"
+    HOURLY_VARS = [
+        "temperature_2m",
+        "precipitation_probability",
+        "wind_speed_10m",
+        "shortwave_radiation_instant",    # Instant GHI
+        "diffuse_radiation_instant",      # Instant DHI
+        "direct_normal_irradiance_instant", # Instant DNI
+        "cloud_cover",
         "precipitation"
-    )
-    # Daily equivalents (means/sums)
-    DAILY_VARS = (
-        "temperature_2m_mean,"
-        "precipitation_probability_mean,"
-        "wind_speed_10m_mean,"
-        "shortwave_radiation_sum," # Daily GHI Sum (e.g., Wh/m²/day)
-        # DNI/DHI sums are less common/useful for simple models, omit unless needed
-        "cloud_cover_mean,"
-        "precipitation_sum"
-    )
+    ]
     
     def __init__(self, api_key: str | None = None):
-        # Open-Meteo doesn't strictly require an API key for non-commercial use
-        super().__init__(api_key) # Pass key anyway if provided/needed later
+        super().__init__(api_key)
+        # Setup the Open-Meteo client (same as before)
+        self.cache_session = requests_cache.CachedSession('.cache', expire_after=-1)
+        self.retry_session = retry(self.cache_session, retries=5, backoff_factor=0.2)
+        self.openmeteo = openmeteo_requests.Client(session=self.retry_session)
+        print("OpenMeteo client initialized.")
 
     def requires_api_key(self) -> bool:
-        # Basic Open-Meteo usage typically does not require a key.
-        # Set to True if using commercial features or if they change policy.
-        return False
+        return False # Standard Open-Meteo hourly use often doesn't need a key
 
     def get_weather_data(self,
                          location: Location,
                          start_time_utc: datetime,
                          end_time_utc: datetime | None = None,
-                         granularity: TimeGranularity = 'hourly'
-                         ) -> list[WeatherData]:
+                         ) -> pd.DataFrame | None:
         """Fetches weather data from Open-Meteo using the specified parameters."""
 
+        self._check_api_key_available()
+        
         # Input validation
         if not isinstance(start_time_utc, datetime) or not start_time_utc.tzinfo:
              raise ValueError("start_time_utc must be a timezone-aware datetime object.")
         if end_time_utc and (not isinstance(end_time_utc, datetime) or not end_time_utc.tzinfo):
              raise ValueError("end_time_utc must be a timezone-aware datetime object if provided.")
-        if granularity not in ['hourly', 'daily']:
-             raise ValueError(f"Invalid granularity specified: {granularity}")
-
-        # Check for API key if needed (using the correct method name from your base class)
-        # self._check_api_key() # OR
-        self._check_api_key_available() # Use the one defined in your WeatherProvider
+        if start_time_utc >= end_time_utc:
+             raise ValueError("end_time_utc must be after start_time_utc.")
+        
+        self._check_api_key_available()
 
         target_end_time = end_time_utc or start_time_utc
-        # Use UTC dates for the API request
         start_date_str = start_time_utc.astimezone(timezone.utc).strftime('%Y-%m-%d')
         end_date_str = target_end_time.astimezone(timezone.utc).strftime('%Y-%m-%d')
 
         params = {
             "latitude": location.latitude,
             "longitude": location.longitude,
-            "timezone": "UTC", # IMPORTANT: Request data in UTC time
+            "timezone": "UTC",
+            "hourly": self.HOURLY_VARS,
             "start_date": start_date_str,
             "end_date": end_date_str,
         }
 
-        if granularity == 'hourly':
-            params["hourly"] = self.HOURLY_VARS
-        elif granularity == 'daily':
-            params["daily"] = self.DAILY_VARS
-            params["precipitation_unit"] = "mm" # Ensure consistency
-
+        print(f"start time: {start_date_str}, end time: {end_date_str}")
+        
+        # --- Make API Call ---
         try:
-            print(f"Requesting Open-Meteo ({granularity}): {self.BASE_URL} with params {params}")
-            response = requests.get(self.BASE_URL, params=params)
-            response.raise_for_status()
-            data = response.json()
-            # print(f"Open-Meteo Response: {json.dumps(data, indent=2)}") # Debug
-
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching {granularity} data from Open-Meteo: {e}")
-            if response is not None: print(f"Response content: {response.text}")
-            return []
-        except json.JSONDecodeError:
-            print(f"Error decoding {granularity} JSON response from Open-Meteo.")
-            return []
-
-        # --- Parse the response ---
-        weather_data_list = []
-        try:
-            data_block = data.get(granularity)
-            if not data_block: raise KeyError(f"'{granularity}' data block missing.")
-
-            times = data_block.get("time")
-            if not times: raise KeyError("'time' array missing.")
-            num_steps = len(times)
-
-            # --- Fetch arrays based on requested variables ---
-            # Hourly/Instantaneous or Daily Means/Sums
-            var_prefix = "" if granularity == 'hourly' else "_" + granularity # Adjust if needed by API
-            temps = data_block.get("temperature_2m" if granularity == 'hourly' else "temperature_2m_mean")
-            precip_probs = data_block.get("precipitation_probability" if granularity == 'hourly' else "precipitation_probability_mean")
-            winds = data_block.get("wind_speed_10m" if granularity == 'hourly' else "windspeed_10m_mean")
-            cloud_covers = data_block.get("cloud_cover" if granularity == 'hourly' else "cloud_cover_mean")
-            precips = data_block.get("precipitation" if granularity == 'hourly' else "precipitation_sum")
-
-            # Irradiance - fetch correct names
-            ghis_instant = data_block.get("shortwave_radiation_instant") # Hourly only
-            dhis_instant = data_block.get("diffuse_radiation_instant")   # Hourly only
-            dnis_instant = data_block.get("direct_normal_irradiance_instant") # Hourly only
-            ghi_sums_daily = data_block.get("shortwave_radiation_sum") # Daily only
-
-            # Basic length validation (optional)
-            # ...
-
-            # --- Loop through time steps ---
-            for i in range(num_steps):
-                ts_str = times[i]
-                if granularity == 'hourly':
-                    ts = datetime.fromisoformat(ts_str.replace('Z', '+00:00')).astimezone(timezone.utc)
-                else: # daily
-                    ts = datetime.strptime(ts_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-
-                # --- Process Irradiance ---
-                current_ghi_inst = None
-                current_dni_inst = None
-                current_dhi_inst = None
-
-                if granularity == 'hourly':
-                    current_ghi_inst = float(ghis_instant[i]) if ghis_instant and ghis_instant[i] is not None else None
-                    current_dni_inst = float(dnis_instant[i]) if dnis_instant and dnis_instant[i] is not None else None
-                    current_dhi_inst = float(dhis_instant[i]) if dhis_instant and dhis_instant[i] is not None else None
-                elif granularity == 'daily':
-                    # No instant values daily. Could estimate average GHI from sum if needed.
-                     if ghi_sums_daily and ghi_sums_daily[i] is not None:
-                         try: # Basic conversion MJ/day -> W/m² average
-                             # Or Wh/day if API provides that: Wh / 24h = W avg
-                             avg_ghi_power = (float(ghi_sums_daily[i]) * 1_000_000) / (24 * 3600) # Assuming MJ input
-                             # Store average power in ghi_instant for consistency, or create new field?
-                             # Let's keep instant fields None for daily for clarity.
-                             pass # Or store avg_ghi_power in a different field if needed
-                         except (ValueError, TypeError): pass # Ignore conversion errors
-
-
-                irradiance = IrradianceComponents(
-                    ghi=current_ghi_inst,
-                    dni=current_dni_inst,
-                    dhi=current_dhi_inst,
-                )
-
-                # --- Process Conditions ---
-                current_temp = float(temps[i]) if temps and temps[i] is not None else 0.0
-                current_wind = float(winds[i]) if winds and winds[i] is not None else None
-                current_precip_prob = float(precip_probs[i]) if precip_probs and precip_probs[i] is not None else None
-                current_cloud = float(cloud_covers[i]) if cloud_covers and cloud_covers[i] is not None else None
-                current_precip = float(precips[i]) if precips and precips[i] is not None else None
-
-
-                conditions = WeatherConditions(
-                    ambient_temperature=current_temp,
-                    wind_speed=current_wind,
-                    precipitation=current_precip,
-                    precipitation_probability=current_precip_prob,
-                    cloud_cover=current_cloud
-                )
-
-                # --- Append WeatherData ---
-                weather_data_list.append(WeatherData(
-                    timestamp_utc=ts,
-                    location=location,
-                    irradiance=irradiance,
-                    conditions=conditions,
-                    granularity=granularity
-                ))
-
-        except (KeyError, ValueError, TypeError) as e:
-            print(f"Error parsing Open-Meteo {granularity} response data: {e}")
+            print(f"Requesting Open-Meteo (Hourly) via library: {params}")
+            responses = self.openmeteo.weather_api(self.BASE_URL, params=params)
+        except Exception as e:
+            print(f"Error fetching hourly data via Open-Meteo library: {e}")
             import traceback
             traceback.print_exc()
-            return []
+            return None
 
-        # --- Filtering by precise start/end times ---
-        final_list = [
-             wd for wd in weather_data_list
-             if wd.timestamp_utc >= start_time_utc and wd.timestamp_utc <= target_end_time
+        if not responses:
+            print("Received no response from Open-Meteo library.")
+            return None
+        response = responses[0]
+        # print(f"Coordinates: {response.Latitude():.2f}°N {response.Longitude():.2f}°E") # Debug
+
+        # --- Process Hourly Data ---
+        hourly = response.Hourly()
+        if hourly is None:
+            print("No hourly data block received.")
+            return None
+
+        hourly_data = {"date": pd.date_range(
+        	start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
+        	end = pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True),
+        	freq = pd.Timedelta(seconds = hourly.Interval()),
+        	inclusive = "left"
+        )}
+        
+        # Add other variables, checking if they exist in the response
+        # Variables are indexed 0, 1, 2,... based on the request order
+        for i, var_name in enumerate(self.HOURLY_VARS):
+            var_data = hourly.Variables(i)
+            if var_data is not None:
+                # Get data as numpy array (library handles potential single value case)
+                values_np = var_data.ValuesAsNumpy()
+                # Assign to dictionary - pandas handles NaN conversion later if needed
+                hourly_data[var_name] = values_np
+            else:
+                print(f"Warning: Data for variable '{var_name}' (index {i}) not found in response.")
+                # Optionally add a column of NaNs: hourly_data[var_name] = np.nan
+
+        try:
+            hourly_dataframe = pd.DataFrame(data=hourly_data)
+        except ValueError as e:
+            print(f"Error creating DataFrame. Possible length mismatch? Error: {e}")
+            # Debug: Print lengths of arrays in hourly_data
+            # for k, v in hourly_data.items():
+            #      print(f"  Length of {k}: {len(v) if hasattr(v, '__len__') else 'N/A'}")
+            return None
+
+        # Set timestamp as index
+        hourly_dataframe = hourly_dataframe.set_index("date")
+
+        # --- Filter DataFrame to precise start/end times ---
+        # Note: Index comparison works with timezone-aware datetimes
+        hourly_dataframe = hourly_dataframe[
+            (hourly_dataframe.index >= start_time_utc) &
+            (hourly_dataframe.index <= end_time_utc)
         ]
-        # Handle request for single point in time
-        if end_time_utc is None and final_list:
-             closest_entry = min(final_list, key=lambda wd: abs(wd.timestamp_utc - start_time_utc))
-             return [closest_entry]
-        return final_list
 
+        if hourly_dataframe.empty:
+            print("Warning: No data found within the specified precise time range after filtering.")
+            # Return the empty DataFrame or None? Let's return the empty DF for consistency.
+            # return None
+
+        return hourly_dataframe
+        
+        
 
 def get_weather_provider(provider_name: str, api_key: str | None = None) -> WeatherProvider:
     """Returns an instance of the specified weather provider."""

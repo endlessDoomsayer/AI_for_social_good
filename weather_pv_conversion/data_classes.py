@@ -1,11 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 import abc # Abstract Base Classes
-import requests # For making API calls
-import json # For handling API responses
-import os # For potential API key management
-from typing import Literal # To specify allowed granularity values
-# --- Core Parameter Classes ---
 
 @dataclass
 class Location:
@@ -15,7 +10,7 @@ class Location:
     altitude: float = 0.0 # Meters above sea level (optional, minor effect)
 
     def __str__(self) -> str:
-        alt_str = f", Alt: {self.altitude:.1f}m" if self.altitude else "Alt: not defined"
+        alt_str = f", Alt: {self.altitude:.1f}m" if self.altitude else f", Alt: not defined"
         return f"Lat: {self.latitude:.4f}, Lon: {self.longitude:.4f}{alt_str}"
 
 @dataclass
@@ -91,7 +86,6 @@ class WeatherConditions:
     precipitation: float | None = None # mm (total amount in the period)
     # rain: float | None = None # mm (total rain amount in the period)
     # snowfall: float | None = None # mm (total snow amount in the period)
-
     precipitation_probability: float | None = None # % (Probability 0-100)
     cloud_cover: float | None = None # % (Total cloud cover 0-100)
 
@@ -104,11 +98,6 @@ class WeatherConditions:
 
         return f"{temp_str}{wind_str}{cloud_str}{prob_str}{precip_str}"
 
-# --- Combined Weather Data Container ---
-
-# Define allowed granularity levels
-TimeGranularity = Literal['hourly', 'daily'] # Extend later if needed e.g., 'minutely'
-
 @dataclass
 class WeatherData:
     """Container for all weather-related data for a specific time period and location."""
@@ -116,9 +105,8 @@ class WeatherData:
     location: Location
     irradiance: IrradianceComponents
     conditions: WeatherConditions
-    granularity: Literal['hourly', 'daily']
 
     def __str__(self) -> str:
-        return (f"WeatherData ({self.granularity} @ {self.timestamp_utc.isoformat()} for {self.location}):\n"
+        return (f"WeatherData (Hourly @ {self.timestamp_utc.isoformat()} for {self.location}):\n"
                 f"  Irradiance: {self.irradiance}\n"
                 f"  Conditions: {self.conditions}")

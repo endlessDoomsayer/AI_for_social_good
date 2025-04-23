@@ -83,6 +83,7 @@ def start_implies_run_2(m, i, t, j):
     return m.x[i, t, j] <= m.y[i, t, j] + m.x[i, t-1, j]
 model.start_condition_2 = pyo.Constraint(model.I, model.T, model.J, rule=start_implies_run_2)
 
+
 # 7. Dependency constraint
 def dependency_rule(m, k, kp1, t, j):
     return m.y[kp1, t, j] <= sum(m.x[k, tp, j] for tp in m.T if tp < t) / d[k]
@@ -102,8 +103,6 @@ model.cooldowns = pyo.Constraint(model.I, model.T, model.J, rule=cooldown_rule)
 def duration_rule(m, i, j):
     return sum(m.x[i, t, j] for t in m.T) == d[i]
 model.job_duration = pyo.Constraint(model.I, model.J, rule=duration_rule)
-
-
 
 # Solve it
 solver = pyo.SolverFactory('glpk')

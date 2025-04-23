@@ -7,7 +7,7 @@ model = pyo.ConcreteModel()
 # Parameters (sample data generation)
 n = 3  # machines
 MAX_JOB_N = 2
-T = list(range(1, 1441))  # 1 to 1440
+T = list(range(1, 1440))  # 1 to 1440
 I = list(range(1, n+1))
 J = list(range(1, MAX_JOB_N+1))
 
@@ -44,6 +44,8 @@ def usage_requirement(m, i):
     return sum(m.x[i, t, j] for t in m.T for j in m.J) >= n_jobs[i] * d[i]
 model.usage_req = pyo.Constraint(model.I, rule=usage_requirement)
 
+
+
 # 2. Each machine can do one job at a time
 def one_job_at_time(m, i, t):
     return sum(m.x[i, t, j] for j in m.J) <= 1
@@ -74,13 +76,13 @@ def start_implies_run(m, i, t, j):
     return m.y[i, t, j] <= m.x[i, t, j]
 model.start_condition = pyo.Constraint(model.I, model.T, model.J, rule=start_implies_run)
 
+
 # 6. Start implies run
 def start_implies_run_2(m, i, t, j):
     if t == 1:
         return m.y[i, t, j] <= m.x[i, t, j]
     return m.x[i, t, j] <= m.y[i, t, j] + m.x[i, t-1, j]
-model.start_condition = pyo.Constraint(model.I, model.T, model.J, rule=start_implies_run_2)
-
+model.start_condition_2 = pyo.Constraint(model.I, model.T, model.J, rule=start_implies_run_2)
 
 # 7. Dependency constraint
 def dependency_rule(m, k, kp1, t, j):
@@ -101,6 +103,11 @@ model.cooldowns = pyo.Constraint(model.I, model.T, model.J, rule=cooldown_rule)
 def duration_rule(m, i, j):
     return sum(m.x[i, t, j] for t in m.T) == d[i]
 model.job_duration = pyo.Constraint(model.I, model.J, rule=duration_rule)
+
+
+
+
+
 
 # Solve it
 solver = pyo.SolverFactory('glpk')

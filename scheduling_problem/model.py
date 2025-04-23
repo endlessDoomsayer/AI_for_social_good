@@ -76,7 +76,6 @@ def start_implies_run(m, i, t, j):
     return m.y[i, t, j] <= m.x[i, t, j]
 model.start_condition = pyo.Constraint(model.I, model.T, model.J, rule=start_implies_run)
 
-
 # 6. Start implies run
 def start_implies_run_2(m, i, t, j):
     if t == 1:
@@ -103,9 +102,6 @@ model.cooldowns = pyo.Constraint(model.I, model.T, model.J, rule=cooldown_rule)
 def duration_rule(m, i, j):
     return sum(m.x[i, t, j] for t in m.T) == d[i]
 model.job_duration = pyo.Constraint(model.I, model.J, rule=duration_rule)
-
-
-
 
 
 

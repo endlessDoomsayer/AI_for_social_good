@@ -30,14 +30,17 @@ M_shared = [{1, 3}]
 # Variables
 model.x = pyo.Var(model.I, model.T, model.J, domain=pyo.Binary)
 model.y = pyo.Var(model.I, model.T, model.J, domain=pyo.Binary)
+model.M = pyo.Var(model.T, domain=pyo.NonNegativeReals)  # excess from Enel
 
 # Objective: Minimize wasted energy
-def objective_rule(m):
-    return sum(e[i] * m.x[i, t, j] + f[i] * m.y[i, t, j] - p[t]
-               for t in m.T for i in m.I for j in m.J)
-model.obj = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
+model.obj = pyo.Objective(expr=sum(model.M[t] for t in model.T), sense=pyo.minimize)
 
 # Constraints
+
+def energy_excess_rule(m, t):
+    total_use = sum(e[i]*m.x[i, t, j] + f[i]*m.y[i, t, j] for i in m.I for j in m.J)
+    return total_use - p[t] >= m.M[t]
+model.tariff_enforcement = pyo.Constraint(model.T, rule=energy_excess_rule)
 
 # 1. Total usage >= needed
 def usage_requirement(m, i):
@@ -106,10 +109,7 @@ model.job_duration = pyo.Constraint(model.I, model.J, rule=duration_rule)
 solver = pyo.SolverFactory('glpk')
 result = solver.solve(model)
 
-# Print status and basic solution
+# Output results
 print(f"Status: {result.solver.status}, Termination: {result.solver.termination_condition}")
-for i in I:
-    for j in J:
-        start_times = [t for t in T if pyo.value(model.y[i, t, j]) > 0.5]
-        if start_times:
-            print(f"Machine {i} Job {j} starts at: {start_times}")
+for t in T[:10]:  # just show a few time points
+    print(f"Minute {t}: Enel excess = {pyo.value(model.M[t])}")

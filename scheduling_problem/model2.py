@@ -31,13 +31,13 @@ M_shared = [{1, 3}]
 model.x = pyo.Var(model.I, model.T, model.J, domain=pyo.Binary)
 model.y = pyo.Var(model.I, model.T, model.J, domain=pyo.Binary)
 
-# Objective: Minimize wasted energy
-def objective_rule(m):
-    return sum(e[i] * m.x[i, t, j] + f[i] * m.y[i, t, j] - p[t]
-               for t in m.T for i in m.I for j in m.J)
-model.obj = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
+# Objective (could be dummy, since we focus on feasibility)
+model.obj = pyo.Objective(expr=0, sense=pyo.minimize)
 
-# Constraints
+# 1. Don’t exceed produced energy (no Enel use)
+def no_enel_energy(m, t):
+    return sum(e[i] * m.x[i, t, j] + f[i] * m.y[i, t, j] for i in m.I for j in m.J) <= p[t]
+model.no_enel = pyo.Constraint(model.T, rule=no_enel_energy)
 
 # 1. Total usage >= needed
 def usage_requirement(m, i):

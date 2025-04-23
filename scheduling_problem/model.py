@@ -33,8 +33,8 @@ model.y = pyo.Var(model.I, model.T, model.J, domain=pyo.Binary)
 
 # Objective: Minimize wasted energy
 def objective_rule(m):
-    return sum(e[i] * m.x[i, t, j] + f[i] * m.y[i, t, j] - p[t]
-               for t in m.T for i in m.I for j in m.J)
+    return max(0,sum(e[i] * m.x[i, t, j] + f[i] * m.y[i, t, j] - p[t]
+               for t in m.T for i in m.I for j in m.J))
 model.obj = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 # Constraints

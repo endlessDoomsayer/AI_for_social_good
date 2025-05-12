@@ -1,0 +1,6 @@
+1. Voglio vedere se riesco a fare tutto solo con pannelli solari e batterie. Si, quanto mi costa? (dati 2024)
+2. Con quello che viene fuori il costo mi chiedo: quanto andrei avanti pagando l'enel e non usando i pannelli con quei soldi? (dati 2024)
+3. Se il punto 1 non conviene, cioè esempio ottengo 50 anni dal punto 2,
+cerco di minimizzare la mia spesa in questi 50 anni facendo il mix tra energia solare e energia importata dall'esterno (dati 2024)
+4. Se il punto 1 conviene o il punto 3 mi dice che c'è un buon mix, per avere questo vantaggio faccio ogni giorno lo scheduling per il futuro per non consumare energia (dati giorno per giorno)
+I punti 1,2,3 ci fanno capire la strategia migliore. Se è la 1 o la 3 dobbiamo fare un CSP per capire lo scheduling delle macchine giorno per giorno.

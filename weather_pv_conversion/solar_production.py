@@ -1,110 +1,91 @@
 import datetime
-import joblib   
+import joblib
 import numpy as np
 import pandas as pd
-import openmeteo_requests # pip install openmeteo-requests
-import requests_cache     # pip install requests-cache requests-cache[all]
-from retry_requests import retry # pip install retry-requests
-import os # Per os.path.join e os.path.exists
-
-# Non abbiamo più bisogno di creare un modello dummy qui, se il file è corretto
-# from sklearn.ensemble import RandomForestRegressor
-# from sklearn.pipeline import Pipeline
-# from sklearn.preprocessing import StandardScaler
-
+import openmeteo_requests
+import requests_cache
+from retry_requests import retry
+import os
+import traceback # Keep for error reporting
 
 class SolarProductionPredictor:
     def __init__(self, model_path="output/model/best_estimator_model.pkl",
                  scaler_path="output/model/scaler.pkl"):
         """
-        Inizializza il predittore caricando il modello e lo scaler.
-
-        Args:
-            model_path (str): Percorso al file del modello serializzato (preferibilmente .joblib o .pkl).
-            scaler_path (str): Percorso al file dello scaler serializzato (preferibilmente .joblib o .pkl).
+        Initializes the predictor by loading the trained model and scaler.
         """
         self.model = None
         self.scaler = None
-        self.model_features_names = None # Nomi delle feature che il modello si aspetta
+        self.model_features_names = None # Expected feature names by the SVR model
 
-        # 1. Carica il modello
+        # Load the SVR model
         if not os.path.exists(model_path):
-            print(f"ERRORE CRITICO: File del modello non trovato in '{os.path.abspath(model_path)}'. Impossibile procedere.")
-            raise FileNotFoundError(f"File del modello non trovato: {model_path}")
-        
+            print(f"CRITICAL ERROR: Model file not found at '{os.path.abspath(model_path)}'. Cannot proceed.")
+            raise FileNotFoundError(f"Model file not found: {model_path}")
         try:
-            self.model = joblib.load(model_path) # Usa joblib.load
-            print(f"Modello caricato con successo da: {os.path.abspath(model_path)}")
-            
+            self.model = joblib.load(model_path)
+            print(f"Model loaded successfully from: {os.path.abspath(model_path)}")
             if hasattr(self.model, 'feature_names_in_'):
-                self.model_features_names = list(self.model.feature_names_in_) # Converti in lista
-                print(f"Il modello si aspetta le seguenti feature: {self.model_features_names}")
+                self.model_features_names = list(self.model.feature_names_in_)
+                print(f"Model expects features (order from model.feature_names_in_): {self.model_features_names}")
             else:
-                print("ATTENZIONE: Il modello caricato non ha l'attributo 'feature_names_in_'. "
-                      "Assicurarsi che la preparazione dei dati corrisponda esattamente all'addestramento del modello.")
-                # Se feature_names_in_ non è disponibile, dovrai definire self.model_features_names
-                # manualmente o assicurarti che il codice in predict() sia corretto.
-                # Per il nostro caso SVR, dovrebbe averlo.
+                # This case should ideally not happen if the model is a recent scikit-learn SVR
+                print("WARNING: Loaded model does not have 'feature_names_in_'. "
+                      "Data preparation must precisely match model training.")
         except Exception as e:
-            print(f"ERRORE CRITICO: Errore durante il caricamento del modello da '{os.path.abspath(model_path)}': {e}")
+            print(f"CRITICAL ERROR: Failed to load model from '{os.path.abspath(model_path)}': {e}")
             raise
 
-        # 2. Carica lo scaler
+        # Load the scaler
         if not os.path.exists(scaler_path):
-            print(f"ATTENZIONE: File dello scaler non trovato in '{os.path.abspath(scaler_path)}'. "
-                  "Se il modello è stato addestrato su dati scalati, le previsioni saranno inaccurate senza lo scaler.")
-            # Non sollevare un'eccezione qui, ma il modello potrebbe non funzionare correttamente.
+            print(f"WARNING: Scaler file not found at '{os.path.abspath(scaler_path)}'. "
+                  "Predictions will be inaccurate if the model was trained on scaled data.")
         else:
             try:
                 self.scaler = joblib.load(scaler_path)
-                print(f"Scaler caricato con successo da: {os.path.abspath(scaler_path)}")
+                print(f"Scaler loaded successfully from: {os.path.abspath(scaler_path)}")
+                if hasattr(self.scaler, 'feature_names_in_'):
+                    print(f"Scaler was fit on features (order from scaler.feature_names_in_): {list(self.scaler.feature_names_in_)}")
             except Exception as e:
-                print(f"ATTENZIONE: Errore durante il caricamento dello scaler da '{os.path.abspath(scaler_path)}': {e}")
-                self.scaler = None # Assicura che sia None se il caricamento fallisce
-
+                print(f"WARNING: Failed to load scaler from '{os.path.abspath(scaler_path)}': {e}")
+                self.scaler = None # Ensure scaler is None if loading fails
 
     def fetch_weather_data(self, start_date_api, end_date_api):
+        # Fetches weather data from Open-Meteo API
         cache_session = requests_cache.CachedSession('.cache', expire_after=-1)
         retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
         openmeteo = openmeteo_requests.Client(session=retry_session)
 
         url = "https://archive-api.open-meteo.com/v1/archive"
-        # Definisci le feature richieste all'API. Devono includere quelle usate dal modello.
+        # Standard set of weather features our SVR model (and its scaler) were trained on
         api_required_features = [
-            "temperature_2m", "precipitation", "wind_speed_10m", "snowfall", "rain", 
-            "cloud_cover", "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high", 
-            "shortwave_radiation", "direct_radiation", "diffuse_radiation", 
+            "temperature_2m", "precipitation", "wind_speed_10m", "snowfall", "rain",
+            "cloud_cover", "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
+            "shortwave_radiation", "direct_radiation", "diffuse_radiation",
             "direct_normal_irradiance", "global_tilted_irradiance", "terrestrial_radiation"
         ]
-        # Se self.model_features_names è definito, potremmo usarlo per essere più precisi,
-        # ma per ora richiediamo un set standard noto.
-        
         params = {
-            "latitude": 45.9,
-            "longitude": 11.9,
-            "start_date": start_date_api,
-            "end_date": end_date_api,
-            "hourly": api_required_features,
-            "timezone": "Europe/Berlin"
+            "latitude": 45.9, "longitude": 11.9,
+            "start_date": start_date_api, "end_date": end_date_api,
+            "hourly": api_required_features, "timezone": "Europe/Berlin"
         }
         responses = openmeteo.weather_api(url, params=params)
         response = responses[0]
         hourly = response.Hourly()
         hourly_data = {"date": pd.date_range(
-            start = pd.to_datetime(hourly.Time(), unit = "s", utc = True).tz_convert(params["timezone"]),
-            end = pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True).tz_convert(params["timezone"]),
-            freq = pd.Timedelta(seconds = hourly.Interval()),
-            inclusive = "left"
+            start=pd.to_datetime(hourly.Time(), unit="s", utc=True).tz_convert(params["timezone"]),
+            end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True).tz_convert(params["timezone"]),
+            freq=pd.Timedelta(seconds=hourly.Interval()), inclusive="left"
         )}
         for i, var_name in enumerate(params["hourly"]):
             hourly_data[var_name] = hourly.Variables(i).ValuesAsNumpy()
-        hourly_dataframe = pd.DataFrame(data = hourly_data)
+        hourly_dataframe = pd.DataFrame(data=hourly_data)
         hourly_dataframe = hourly_dataframe.set_index("date")
         return hourly_dataframe
 
     def predict(self, start_date_str, start_hour=0, end_date_str=None, end_hour=23):
         if self.model is None:
-            print("ERRORE: Nessun modello caricato. Impossibile effettuare previsioni.")
+            print("ERROR: Model not loaded. Cannot make predictions.")
             return pd.DataFrame(columns=['predicted_production'])
 
         if end_date_str is None:
@@ -115,14 +96,11 @@ class SolarProductionPredictor:
             start_datetime_filter = pd.Timestamp(start_dt_str, tz='Europe/Berlin')
             end_datetime_filter = pd.Timestamp(end_dt_str, tz='Europe/Berlin')
 
-            api_start_date = start_date_str
-            api_end_date = end_date_str
-            
-            print(f"Recupero dati meteo da {api_start_date} a {api_end_date}...")
-            weather_df = self.fetch_weather_data(api_start_date, api_end_date)
+            print(f"Fetching weather data from {start_date_str} to {end_date_str}...")
+            weather_df = self.fetch_weather_data(start_date_str, end_date_str)
 
             if weather_df.empty:
-                print("Nessun dato meteo recuperato.")
+                print("No weather data fetched.")
                 return pd.DataFrame(columns=['predicted_production'])
 
             filtered_df = weather_df[
@@ -131,136 +109,149 @@ class SolarProductionPredictor:
             ]
 
             if filtered_df.empty:
-                print(f"Nessun dato meteo per la finestra: {start_datetime_filter} a {end_datetime_filter}")
+                print(f"No weather data for the specified window: {start_datetime_filter} to {end_datetime_filter}")
                 return pd.DataFrame(columns=['predicted_production'])
             
-            print(f"Dati filtrati per la previsione: {len(filtered_df)} righe.")
+            print(f"Filtered data for prediction: {len(filtered_df)} rows.")
 
-            # --- 4. Prepara le feature per il modello ---
             if self.model_features_names is None:
-                print("ERRORE CRITICO: i nomi delle feature del modello non sono definiti (model_features_names è None). "
-                      "Impossibile selezionare le feature corrette. "
-                      "Verificare il caricamento del modello o definire manualmente le feature attese.")
+                print("CRITICAL ERROR: Model feature names (model_features_names) are not defined.")
                 return pd.DataFrame(columns=['predicted_production'])
 
-            features_to_use = self.model_features_names
+            # SVR model expects features in this specific order
+            svr_expected_features_ordered = self.model_features_names
 
-            # Seleziona solo le colonne necessarie dal filtered_df
-            # NON aggiungere 'hour', 'month', ecc. qui, perché il modello SVR
-            # è stato addestrato con le 15 feature meteorologiche dirette.
-            
-            # Verifica se tutte le feature necessarie sono presenti nei dati recuperati
-            missing_cols = [col for col in features_to_use if col not in filtered_df.columns]
-            if missing_cols:
-                print(f"ERRORE: Feature richieste dal modello mancanti nei dati recuperati: {missing_cols}")
-                print(f"Colonne disponibili: {filtered_df.columns.tolist()}")
+            missing_cols_for_svr = [col for col in svr_expected_features_ordered if col not in filtered_df.columns]
+            if missing_cols_for_svr:
+                print(f"ERROR: SVR model required features missing from fetched data: {missing_cols_for_svr}")
+                print(f"Available columns: {list(filtered_df.columns)}")
                 return pd.DataFrame(columns=['predicted_production'])
 
-            X_predict_raw = filtered_df[features_to_use] # DataFrame con le sole feature richieste, nell'ordine corretto se features_to_use lo è
+            # Raw features, ordered as expected by the SVR model
+            X_predict_raw = filtered_df[svr_expected_features_ordered]
             
-            # --- SCALATURA ---
-            X_for_prediction_final = X_predict_raw.copy() 
+            # This will hold the final data for prediction (scaled or unscaled)
+            X_for_prediction_final = X_predict_raw.copy()
+            
             if self.scaler:
-                print("Applicazione dello scaler caricato...")
-                # Le colonne da scalare sono tutte tranne 'precipitation' (come nel notebook)
-                cols_to_scale = [col for col in X_predict_raw.columns if col != 'precipitation']
+                print("Applying loaded scaler...")
                 
-                if cols_to_scale: # Procedi solo se ci sono colonne da scalare
+                if not hasattr(self.scaler, 'feature_names_in_'):
+                    print("CRITICAL ERROR: Scaler does not have 'feature_names_in_'. Cannot determine correct column order for scaling.")
+                    return pd.DataFrame(columns=['predicted_production'])
+
+                # Features expected by the scaler, in the correct order
+                scaler_expected_features_ordered = list(self.scaler.feature_names_in_)
+
+                missing_for_scaler = [col for col in scaler_expected_features_ordered if col not in X_predict_raw.columns]
+                if missing_for_scaler:
+                    print(f"ERROR: Scaler required features missing from X_predict_raw: {missing_for_scaler}")
+                    return pd.DataFrame(columns=['predicted_production'])
+
+                if scaler_expected_features_ordered: # Proceed only if scaler expects features
                     try:
-                        # Applica la trasformazione solo alle colonne selezionate
-                        scaled_values = self.scaler.transform(X_predict_raw[cols_to_scale])
-                        # Aggiorna X_for_prediction_final con i valori scalati
-                        X_for_prediction_final[cols_to_scale] = scaled_values
-                        print("Dati scalati con successo.")
+                        # Prepare data for scaler: select columns in the order scaler expects
+                        data_to_transform = X_predict_raw[scaler_expected_features_ordered]
+                        
+
+                        scaled_values = self.scaler.transform(data_to_transform)
+                        
+                        # Update the final prediction DataFrame with scaled values
+                        X_for_prediction_final.loc[:, scaler_expected_features_ordered] = scaled_values
+                        print("Data scaled successfully.")
                     except ValueError as ve:
-                        print(f"ERRORE durante la scalatura: {ve}")
-                        print("Questo può accadere se lo scaler è stato fittato su un numero/nomi di feature diversi "
-                              "da quelle ora presenti in cols_to_scale, o se l'ordine delle colonne è diverso.")
-                        print(f"Colonne che si è tentato di scalare: {cols_to_scale}")
-                        print("Impossibile procedere con la previsione a causa dell'errore di scalatura.")
+                        print(f"ERROR during scaling: {ve}")
+                        print(f"  Attempted to scale columns (ordered by scaler.feature_names_in_): {scaler_expected_features_ordered}")
+                        if hasattr(self.scaler, 'n_features_in_'):
+                             print(f"  (Debug) Scaler expects {self.scaler.n_features_in_} features.")
+                        print("Cannot proceed with prediction due to scaling error.")
                         return pd.DataFrame(columns=['predicted_production'])
                 else:
-                    print("Nessuna colonna (esclusa 'precipitation') trovata da scalare.")
+                    print("WARNING: scaler.feature_names_in_ is empty. No columns will be scaled.")
             else:
-                print("ATTENZIONE: Nessuno scaler caricato. Si utilizzeranno le feature grezze per la previsione. "
-                      "Questo è un ERRORE se il modello è stato addestrato su dati scalati.")
-                # Se il modello è un SVR (come nel tuo caso), si aspetta quasi certamente dati scalati.
-                # Senza lo scaler, le previsioni saranno errate.
+                print("WARNING: No scaler loaded. Using raw features. "
+                      "This is an ERROR if the SVR model was trained on scaled data.")
 
-            # --- 5. Esegui previsioni ---
-            print(f"Esecuzione previsioni con {len(X_for_prediction_final.columns)} feature: {X_for_prediction_final.columns.tolist()}")
-            predictions_array = self.model.predict(X_for_prediction_final)
+            # Prepare final data for SVR model, ensuring correct feature order
+            final_data_for_svr = X_for_prediction_final[svr_expected_features_ordered]
+            
+            print(f"Making predictions with {len(final_data_for_svr.columns)} features (SVR model order): {list(final_data_for_svr.columns)}")
+            predictions_array = self.model.predict(final_data_for_svr)
 
             results_df = pd.DataFrame(
                 data={'predicted_production': predictions_array},
-                index=X_for_prediction_final.index
+                index=final_data_for_svr.index
             )
             return results_df
 
         except Exception as e:
-            print(f"Si è verificato un errore durante la previsione: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"An error occurred during prediction: {e}")
+            traceback.print_exc() # Print full traceback for unexpected errors
             return pd.DataFrame(columns=['predicted_production'])
-
-# --- Esempio di Utilizzo ---
-if __name__ == '__main__':
-    # Assicurati che i file 'best_estimator_model.pkl' e 'scaler.pkl' esistano nei percorsi specificati.
-    # E che 'scaler.pkl' sia stato salvato dal tuo notebook di addestramento:
-    # Esempio nel notebook: joblib.dump(scaler, "output/model/scaler.pkl")
-
-    # Percorsi relativi alla directory da cui esegui questo script (es. AI_for_social_good/)
-    # Se questo script è in weather_pv_conversion/, i percorsi dovrebbero essere:
-    # model_file_path = os.path.join("..", "output", "model", "best_estimator_model.pkl")
-    # scaler_file_path = os.path.join("..", "output", "model", "scaler.pkl")
-    # Per ora, assumo che lo script sia nella directory radice AI_for_social_good/
     
-    base_output_dir = "output/model" # Modifica se la tua struttura è diversa
+    def sum_predicted_production(predictions_df: pd.DataFrame) -> float:
+        """
+        Calculates the sum of predicted solar production.
+
+        Args:
+            predictions_df (pd.DataFrame): A DataFrame with a 'predicted_production' column
+                                        and a DatetimeIndex. The sum is of the production
+                                        values themselves (e.g., Watts). If you want energy (e.g., Wh),
+                                        you'd need to multiply by the time interval.
+
+        Returns:
+            float: The total sum of 'predicted_production' values.
+                Returns 0.0 if the DataFrame is empty or the column is missing.
+        """
+        if predictions_df.empty or 'predicted_production' not in predictions_df.columns:
+            print("Input DataFrame is empty or 'predicted_production' column is missing. Returning 0.0.")
+            return 0.0
+        
+        # Sum the 'predicted_production' column
+        total_production = predictions_df['predicted_production'].sum()
+        
+        return total_production
+
+# --- Example Usage ---
+if __name__ == '__main__':
+    # Adjust base_output_dir if your script is not in the project root (AI_for_social_good)
+    # e.g., if in weather_pv_conversion/: base_output_dir = os.path.join("..", "output", "model")
+    base_output_dir = "weather_pv_conversion/output/model" 
+    
     model_file_name = "best_estimator_model.pkl"
     scaler_file_name = "scaler.pkl"
 
     model_file_path = os.path.join(base_output_dir, model_file_name)
     scaler_file_path = os.path.join(base_output_dir, scaler_file_name)
     
-    # Controlla se i file esistono prima di creare l'istanza
     if not os.path.exists(model_file_path):
-        print(f"ERRORE: File del modello non trovato in {os.path.abspath(model_file_path)}")
-        print("Assicurati che il modello sia stato salvato correttamente dal notebook di addestramento.")
+        print(f"ERROR: Model file not found at {os.path.abspath(model_file_path)}. Please ensure it's saved correctly.")
         exit()
-    # Non uscire per lo scaler mancante, ma il predittore darà un avviso e le previsioni saranno probabilmente errate.
     if not os.path.exists(scaler_file_path):
-        print(f"ATTENZIONE: File dello scaler non trovato in {os.path.abspath(scaler_file_path)}")
-        print("Le previsioni potrebbero essere inaccurate. Salva lo scaler dal notebook.")
+        print(f"WARNING: Scaler file not found at {os.path.abspath(scaler_file_path)}. Predictions may be inaccurate.")
         
     try:
         predictor = SolarProductionPredictor(model_path=model_file_path, scaler_path=scaler_file_path)
 
-        # Test case 1
-        print("\n--- Test Case 1: Singolo giorno, ore specifiche ---")
-        # Date API valide: "2024-01-01" a "2025-02-28" (dal tuo notebook)
         start_date_test = "2024-07-10" 
+        print(f"\n--- Test Case 1: {start_date_test} ---")
         predictions = predictor.predict(start_date_test, start_hour=8, end_date_str=start_date_test, end_hour=17)
         if not predictions.empty:
-            print(f"Previsioni per {start_date_test} dalle 8:00 alle 17:00:")
-            print(predictions)
+            print(f"Predictions for {start_date_test}:\n{predictions}")
         else:
-            print("Nessuna previsione restituita per Test Case 1.")
+            print(f"No predictions returned for {start_date_test}.")
 
-        # Test case 2
-        print("\n--- Test Case 2: Giorni multipli, ore predefinite (00:00 a 23:00) ---")
         start_date_2_test = "2024-07-10"
         end_date_2_test = "2024-07-11"
+        print(f"\n--- Test Case 2: {start_date_2_test} to {end_date_2_test} ---")
         predictions_multi_day = predictor.predict(start_date_2_test, start_hour=0, end_date_str=end_date_2_test, end_hour=23)
         if not predictions_multi_day.empty:
-            print(f"Previsioni da {start_date_2_test} 00:00 a {end_date_2_test} 23:00:")
-            print(predictions_multi_day)
+            print(f"Predictions from {start_date_2_test} to {end_date_2_test}:\n{predictions_multi_day}")
         else:
-            print("Nessuna previsione restituita per Test Case 2.")
+            print(f"No predictions returned for {start_date_2_test} to {end_date_2_test}.")
 
-    except FileNotFoundError as fnf_error:
-        # Gestisce specificamente FileNotFoundError sollevato da __init__
-        print(f"Esecuzione interrotta a causa di file mancante: {fnf_error}")
+    except FileNotFoundError as fnf_error: # Handles critical FileNotFoundError from __init__
+        print(f"Execution stopped due to missing file: {fnf_error}")
     except Exception as main_exception:
-        print(f"ERRORE CRITICO nell'esecuzione principale: {main_exception}")
-        import traceback
+        print(f"CRITICAL ERROR in main execution: {main_exception}")
         traceback.print_exc()

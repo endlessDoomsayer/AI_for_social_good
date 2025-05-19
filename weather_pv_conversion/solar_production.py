@@ -13,6 +13,10 @@ class SolarProductionPredictor:
                  scaler_path="output/model/scaler.pkl"):
         """
         Initializes the predictor by loading the trained model and scaler.
+        @param model_path: Path to the trained SVR model file. It is not mandatory to specify it,
+                          as it defaults to "output/model/best_estimator_model.pkl".
+        @param scaler_path: Path to the scaler file. It is not mandatory to specify it,
+                           as it defaults to "output/model/scaler.pkl".
         """
         self.model = None
         self.scaler = None
@@ -29,7 +33,6 @@ class SolarProductionPredictor:
                 self.model_features_names = list(self.model.feature_names_in_)
                 print(f"Model expects features (order from model.feature_names_in_): {self.model_features_names}")
             else:
-                # This case should ideally not happen if the model is a recent scikit-learn SVR
                 print("WARNING: Loaded model does not have 'feature_names_in_'. "
                       "Data preparation must precisely match model training.")
         except Exception as e:
@@ -50,7 +53,11 @@ class SolarProductionPredictor:
                 print(f"WARNING: Failed to load scaler from '{os.path.abspath(scaler_path)}': {e}")
                 self.scaler = None # Ensure scaler is None if loading fails
 
-    def fetch_weather_data(self, start_date_api, end_date_api):
+    def _fetch_weather_data(self, start_date_api, end_date_api):
+        """
+        Fetches weather data from Open-Meteo API for the given date range.
+        internal method.
+        """
         # Fetches weather data from Open-Meteo API
         cache_session = requests_cache.CachedSession('.cache', expire_after=-1)
         retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
@@ -84,6 +91,14 @@ class SolarProductionPredictor:
         return hourly_dataframe
 
     def predict(self, start_date_str, start_hour=0, end_date_str=None, end_hour=23):
+        """
+        Predicts solar production using the loaded model and scaler.
+        @param start_date_str: Start date in 'YYYY-MM-DD' format.
+        @param start_hour: Start hour (0-23), default is 0.
+        @param end_date_str: End date in 'YYYY-MM-DD' format. If None, uses start_date_str, it means only one day.
+        @param end_hour: End hour (0-23), default is 23.
+        @return: DataFrame with predicted solar production.
+        """
         if self.model is None:
             print("ERROR: Model not loaded. Cannot make predictions.")
             return pd.DataFrame(columns=['predicted_production'])
@@ -97,7 +112,7 @@ class SolarProductionPredictor:
             end_datetime_filter = pd.Timestamp(end_dt_str, tz='Europe/Berlin')
 
             print(f"Fetching weather data from {start_date_str} to {end_date_str}...")
-            weather_df = self.fetch_weather_data(start_date_str, end_date_str)
+            weather_df = self._fetch_weather_data(start_date_str, end_date_str)
 
             if weather_df.empty:
                 print("No weather data fetched.")
@@ -130,7 +145,7 @@ class SolarProductionPredictor:
             # Raw features, ordered as expected by the SVR model
             X_predict_raw = filtered_df[svr_expected_features_ordered]
             
-            # This will hold the final data for prediction (scaled or unscaled)
+            # This will hold the final data for prediction
             X_for_prediction_final = X_predict_raw.copy()
             
             if self.scaler:
@@ -189,33 +204,22 @@ class SolarProductionPredictor:
             traceback.print_exc() # Print full traceback for unexpected errors
             return pd.DataFrame(columns=['predicted_production'])
     
-    def sum_predicted_production(predictions_df: pd.DataFrame) -> float:
+    def sum_predicted_production(self, predictions_df: pd.DataFrame) -> float:
         """
-        Calculates the sum of predicted solar production.
-
-        Args:
-            predictions_df (pd.DataFrame): A DataFrame with a 'predicted_production' column
-                                        and a DatetimeIndex. The sum is of the production
-                                        values themselves (e.g., Watts). If you want energy (e.g., Wh),
-                                        you'd need to multiply by the time interval.
-
-        Returns:
-            float: The total sum of 'predicted_production' values.
-                Returns 0.0 if the DataFrame is empty or the column is missing.
+        Calculates the sum of predicted solar production from a DataFrame.
+        This method operates on a DataFrame passed to it.
+        @param predictions_df: DataFrame containing the predicted solar production. Basically, it is the output of the predict method.
+        @return: Sum of predicted solar production.
         """
         if predictions_df.empty or 'predicted_production' not in predictions_df.columns:
-            print("Input DataFrame is empty or 'predicted_production' column is missing. Returning 0.0.")
+            print("Input DataFrame is empty or 'predicted_production' column is missing. Returning 0.0 for sum.")
             return 0.0
         
-        # Sum the 'predicted_production' column
         total_production = predictions_df['predicted_production'].sum()
-        
         return total_production
+"""
+if __name__ == '__main__': #da cancellareeee
 
-# --- Example Usage ---
-if __name__ == '__main__':
-    # Adjust base_output_dir if your script is not in the project root (AI_for_social_good)
-    # e.g., if in weather_pv_conversion/: base_output_dir = os.path.join("..", "output", "model")
     base_output_dir = "weather_pv_conversion/output/model" 
     
     model_file_name = "best_estimator_model.pkl"
@@ -229,29 +233,26 @@ if __name__ == '__main__':
         exit()
     if not os.path.exists(scaler_file_path):
         print(f"WARNING: Scaler file not found at {os.path.abspath(scaler_file_path)}. Predictions may be inaccurate.")
-        
-    try:
-        predictor = SolarProductionPredictor(model_path=model_file_path, scaler_path=scaler_file_path)
+    
 
-        start_date_test = "2024-07-10" 
-        print(f"\n--- Test Case 1: {start_date_test} ---")
-        predictions = predictor.predict(start_date_test, start_hour=8, end_date_str=start_date_test, end_hour=17)
-        if not predictions.empty:
-            print(f"Predictions for {start_date_test}:\n{predictions}")
-        else:
-            print(f"No predictions returned for {start_date_test}.")
+    predictor = SolarProductionPredictor(model_path=model_file_path, scaler_path=scaler_file_path)
 
-        start_date_2_test = "2024-07-10"
-        end_date_2_test = "2024-07-11"
-        print(f"\n--- Test Case 2: {start_date_2_test} to {end_date_2_test} ---")
-        predictions_multi_day = predictor.predict(start_date_2_test, start_hour=0, end_date_str=end_date_2_test, end_hour=23)
-        if not predictions_multi_day.empty:
-            print(f"Predictions from {start_date_2_test} to {end_date_2_test}:\n{predictions_multi_day}")
-        else:
-            print(f"No predictions returned for {start_date_2_test} to {end_date_2_test}.")
+    start_date_test = "2024-07-10" 
+    print(f"\n--- Test Case 1: {start_date_test} ---")
+    predictions = predictor.predict(start_date_test, start_hour=8, end_date_str=start_date_test, end_hour=17)
+    print("AAAA")
+    print(predictor.sum_predicted_production(predictions))
+    if not predictions.empty:
+        print(f"Predictions for {start_date_test}:\n{predictions}")
+    else:
+        print(f"No predictions returned for {start_date_test}.")
 
-    except FileNotFoundError as fnf_error: # Handles critical FileNotFoundError from __init__
-        print(f"Execution stopped due to missing file: {fnf_error}")
-    except Exception as main_exception:
-        print(f"CRITICAL ERROR in main execution: {main_exception}")
-        traceback.print_exc()
+    start_date_2_test = "2024-07-10"
+    end_date_2_test = "2024-07-11"
+    print(f"\n--- Test Case 2: {start_date_2_test} to {end_date_2_test} ---")
+    predictions_multi_day = predictor.predict(start_date_2_test, start_hour=0, end_date_str=end_date_2_test, end_hour=23)
+    if not predictions_multi_day.empty:
+        print(f"Predictions from {start_date_2_test} to {end_date_2_test}:\n{predictions_multi_day}")
+    else:
+        print(f"No predictions returned for {start_date_2_test} to {end_date_2_test}.")
+"""

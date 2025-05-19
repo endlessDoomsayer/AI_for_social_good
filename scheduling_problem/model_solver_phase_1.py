@@ -1,48 +1,47 @@
 import pyomo.environ as pyo
 import random
-import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
 # Create a concrete model
 model = pyo.ConcreteModel()
 
+# REAL DATA
 # Parameters (sample data generation)
-N = 5  # Number of batteries
-M = 3  # Number of machines
+MACHINES = 6  # Number of machines
 MAX_JOB_N = 4  # Maximum number of jobs per machine
 T_MAX = 48  # Number of time periods (e.g., 48 half-hours in a day)
 
 # Define sets
-T = list(range(1, T_MAX + 1))
-I = list(range(1, M + 1))
-J = list(range(1, MAX_JOB_N + 1))
+T = list(range(1, T_MAX + 1)) # time
+I = list(range(1, M + 1)) # machines
+J = list(range(1, MAX_JOB_N + 1)) # jobs
 
 model.T = pyo.Set(initialize=T)
 model.I = pyo.Set(initialize=I)
 model.J = pyo.Set(initialize=J)
 
-# Cost parameters
-c_b = 100  # Cost per battery
-c_p = 20   # Cost per unit of power
+# Cost parameters TODO
+c_b = 1000  # Cost per battery
+c_p = 2000   # Cost per unit of power
 
-# Energy parameters (random generation)
+# Energy parameters (random generation) TODO: put real data
 # e_i: energy consumption when machine i is running
-e = {i: random.randint(2, 5) for i in I}
+e = {1 : 93882, 2: 77970, 3: 3506, 4:3502, 5: 3381, 6:8856}
 # f_i: additional energy consumed when machine i starts
-f = {i: random.randint(1, 3) for i in I}
-# p_t: energy price at time t
-p = {t: random.uniform(0.8, 1.2) * (1 + 0.5 * np.sin(2 * np.pi * t / 24)) for t in T}  # Daily price cycle
+f = {i: 1000 for i in I}
+# p_t: energy produced at time t by one unit of power
+p = {t: 20000 for t in T}
 # m_t: maximum energy available at time t
-mmm = {t: random.randint(15, 20) for t in T}
+mmm = {t: random.randint(80000, 200000) for t in T}
 # d_i: duration of job on machine i
-d = {i: random.randint(3, 6) for i in I}
+d = {i: random.randint(3, 8) for i in I}
 # n_i: number of jobs required for machine i
 n_jobs = {i: random.randint(1, MAX_JOB_N) for i in I}
 # c_i: cooldown period for machine i
 c = {i: random.randint(2, 4) for i in I}
 # B: battery capacity
-B = 20
+B = 200000
 
 # Sets of dependencies and shared resources (example)
 # Pairs of machines where the second depends on the first
@@ -52,7 +51,7 @@ M_shared = [[1, 3], [2, 4]]  # Machines 1 and 3 share resources, as do 2 and 4
 
 # Print the generated data for reference
 print("Generated Parameters:")
-print(f"Batteries (N): {N}, Cost per battery (c_b): {c_b}")
+print(f"Cost per battery (c_b): {c_b}")
 print(f"Cost per power unit (c_p): {c_p}")
 print(f"Machine energy usage (e): {e}")
 print(f"Machine startup energy (f): {f}")
@@ -64,19 +63,21 @@ print(f"Machine dependencies: {M_dependencies}")
 print(f"Shared resource groups: {M_shared}")
 
 # Variables
+model.M = pyo.Var(model.I, model.T, model.J, domain=pyo.NonNegativeIntegers)  # 1 if machine i runs job j at time t
+model.N = pyo.Var(model.I, model.T, model.J, domain=pyo.NonNegativeIntegers)  # 1 if machine i runs job j at time t
 model.x = pyo.Var(model.I, model.T, model.J, domain=pyo.Binary)  # 1 if machine i runs job j at time t
 model.y = pyo.Var(model.I, model.T, model.J, domain=pyo.Binary)  # 1 if machine i starts job j at time t
 model.s = pyo.Var(model.T, domain=pyo.NonNegativeReals)  # Energy stored at time t
 
 # Objective: Minimize battery and power costs
-def objective_rule(m):
-    return N * c_b + M * c_p
+def objective_rule(n, m):
+    return n * c_b + m * c_p
 model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 # Constraints
 
 # 1. Energy balance constraint
-def energy_balance_rule(m, t):
+def energy_balance_rule(t):
     return sum(e[i] * m.x[i, t, j] + f[i] * m.y[i, t, j] for i in m.I for j in m.J) - M * p[t] - m.s[t] <= 0
 model.energy_balance = pyo.Constraint(model.T, rule=energy_balance_rule)
 

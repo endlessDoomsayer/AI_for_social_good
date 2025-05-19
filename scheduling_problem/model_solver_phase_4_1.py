@@ -79,6 +79,8 @@ def create_and_solve_model(
     # Constraint 8: Unavailable machines
     for i, t in unavailable_machines:
         def unavailable_machine_rule(model, i=i, t=t):
+            if i is None: # TODO: see if this is right
+                i = 1
             return sum(model.x[i, t, j] for j in model.J) == 0
         model.add_component(f'unavailable_machine_{i}_{t}', pyo.Constraint(rule=unavailable_machine_rule))
     
@@ -165,24 +167,24 @@ def create_and_solve_model(
 # Example usage
 if __name__ == "__main__":
     # Define example data
-    jobs = ['job1', 'job2', 'job3']
-    machines = ['machine1', 'machine2', 'machine3']
+    jobs = [1, 2, 3]
+    machines = [1,2,3]
     time_periods = list(range(1, 11))  # 10 time periods
     
     # Machine costs
-    e_i = {'machine1': 10, 'machine2': 15, 'machine3': 20}
+    e_i = {1: 10, 2: 15, 3: 20}
     
     # Setup costs
-    f_i = {'machine1': 5, 'machine2': 8, 'machine3': 12}
+    f_i = {1: 5, 2: 8, 3: 12}
     
     # Fixed cost parameter
     M = 100
     
     # Job durations for each machine
-    d_i = {'machine1': 2, 'machine2': 3, 'machine3': 2}
+    d_i = {1: 2, 2: 3, 3: 2}
     
     # Minimum job requirements
-    n_i = {'machine1': 1, 'machine2': 1, 'machine3': 1}
+    n_i = {1: 1, 2: 1, 3: 1}
     
     # Machine capacity limits for each time period
     m_t = {t: 50 for t in time_periods}
@@ -191,16 +193,16 @@ if __name__ == "__main__":
     NB = 200
     
     # Machine dependencies (k, k+1)
-    machine_dependencies = [('machine1', 'machine2'), ('machine2', 'machine3')]
+    machine_dependencies = [(1, 2), (2, 3)]
     
     # Shared resources
-    shared_resources = [['machine1', 'machine2'], ['machine2', 'machine3']]
+    shared_resources = [[1, 2], [2, 3]]
     
     # Unavailable machines at specific times
-    unavailable_machines = [('machine1', 3), ('machine2', 5)]
+    unavailable_machines = [(1, 3), (2, 5)]
     
     # Cooldown periods
-    c_i = {'machine1': 1, 'machine2': 2, 'machine3': 1}
+    c_i = {1: 1, 2: 2, 3: 1}
     
     # Create and solve the model
     model, solution = create_and_solve_model(

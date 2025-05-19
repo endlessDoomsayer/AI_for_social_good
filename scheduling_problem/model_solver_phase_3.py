@@ -92,6 +92,8 @@ model.energy_production_limit = pyo.Constraint(T, rule=energy_production_limit_r
 
 # Some machines cannot operate at specific times (for example, machine 1 at time 3)
 def machine_unavailable_rule(model, i=1, t=3):
+    if i is None:
+        i = 1
     return sum(model.x[i, t, j] for j in J) == 0
 model.machine_unavailable = pyo.Constraint(rule=machine_unavailable_rule)
 
@@ -102,12 +104,18 @@ for sr in shared_resources:
                            pyo.Constraint(expr=sum(model.x[i, t, j] for i in sr for j in J) <= 1))
 
 # Job continuity constraint: a job either continues from previous time or starts
-def job_continuity_rule(model, i, t, j):
+def job_continuity_rule_1(model, i, t, j):
     if t == T[0]:
         return model.y[i, t, j] == model.x[i, t, j]
     else:
-        return model.y[i, t, j] <= model.x[i, t, j] <= model.y[i, t, j] + model.x[i, t-1, j]
-model.job_continuity = pyo.Constraint(I, T, J, rule=job_continuity_rule)
+        return model.y[i, t, j] <= model.x[i, t, j]
+def job_continuity_rule_2(model, i, t, j):
+    if t == T[0]:
+        return model.y[i, t, j] == model.x[i, t, j]
+    else:
+        return model.x[i, t, j] <= model.y[i, t, j] + model.x[i, t-1, j]
+model.job_continuity_1 = pyo.Constraint(I, T, J, rule=job_continuity_rule_1)
+model.job_continuity_2 = pyo.Constraint(I, T, J, rule=job_continuity_rule_2)
 
 # Machine dependency constraints
 for k, k_plus_1 in machine_dependencies:

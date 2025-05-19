@@ -118,6 +118,8 @@ def resource_consumption_limit(model, t):
 for i, t in unavailable:
     @model.Constraint()
     def machine_unavailable(model, i=i, t=t):
+        if i is None:
+            i = 1
         return sum(model.x[i, t, j] for j in model.J) == 0
 
 # Constraint 10: Machines with shared resources constraint

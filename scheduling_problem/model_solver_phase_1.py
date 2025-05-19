@@ -9,12 +9,12 @@ model = pyo.ConcreteModel()
 # REAL DATA
 # Parameters (sample data generation)
 MACHINES = 6  # Number of machines
-MAX_JOB_N = 4  # Maximum number of jobs per machine
-T_MAX = 48  # Number of time periods (e.g., 48 half-hours in a day)
+MAX_JOB_N = 2  # Maximum number of jobs per machine
+T_MAX = 24  # Number of time periods (e.g., 48 half-hours in a day)
 
 # Define sets
-T = list(range(1, T_MAX + 1)) # time
-I = list(range(1, M + 1)) # machines
+T = list(range(1, T_MAX + 1)) # time # TODO: si parte da uno o da zero??
+I = list(range(1, MACHINES + 1)) # machines
 J = list(range(1, MAX_JOB_N + 1)) # jobs
 
 model.T = pyo.Set(initialize=T)
@@ -27,27 +27,33 @@ c_p = 2000   # Cost per unit of power
 
 # Energy parameters (random generation) TODO: put real data
 # e_i: energy consumption when machine i is running
-e = {1 : 93882, 2: 77970, 3: 3506, 4:3502, 5: 3381, 6:8856}
+e = {1 : 1000, 2: 1000, 3: 3506, 4:3502, 5: 3381, 6:8856}
 # f_i: additional energy consumed when machine i starts
 f = {i: 1000 for i in I}
 # p_t: energy produced at time t by one unit of power
-p = {t: 20000 for t in T}
+p = {t: 2000 for t in T}
 # m_t: maximum energy available at time t
 mmm = {t: random.randint(80000, 200000) for t in T}
 # d_i: duration of job on machine i
 d = {i: random.randint(3, 8) for i in I}
 # n_i: number of jobs required for machine i
-n_jobs = {i: random.randint(1, MAX_JOB_N) for i in I}
+n_jobs = {i: 1 for i in I if i != 1} 
+n_jobs[1] = 2
 # c_i: cooldown period for machine i
 c = {i: random.randint(2, 4) for i in I}
+# THRESHOLD_FOR_JOB_J
+THRESHOLD_FOR_JOB_J_AND_I = {(i,j): 12+random.randint(1,T_MAX-12) for i in I for j in J} #TODO: put j*24 as we have some jobs per day
 # B: battery capacity
-B = 200000
+B = 2000
 
 # Sets of dependencies and shared resources (example)
 # Pairs of machines where the second depends on the first
 M_dependencies = [(1, 2), (2, 3)]  # Machine 2 depends on 1, Machine 3 depends on 2
 # Groups of machines that share resources and cannot run simultaneously
 M_shared = [[1, 3], [2, 4]]  # Machines 1 and 3 share resources, as do 2 and 4
+# TODO: silent times
+silent_periods = {}#1: range(10, 16), 3: range(30, 36)}  # Machine 1 off during 10-15, Machine 3 off during 30-35
+
 
 # Print the generated data for reference
 print("Generated Parameters:")
@@ -63,42 +69,51 @@ print(f"Machine dependencies: {M_dependencies}")
 print(f"Shared resource groups: {M_shared}")
 
 # Variables
-model.M = pyo.Var(model.I, model.T, model.J, domain=pyo.NonNegativeIntegers)  # 1 if machine i runs job j at time t
-model.N = pyo.Var(model.I, model.T, model.J, domain=pyo.NonNegativeIntegers)  # 1 if machine i runs job j at time t
+model.M = pyo.Var(domain=pyo.NonNegativeIntegers)  # 1 if machine i runs job j at time t
+model.N = pyo.Var(domain=pyo.NonNegativeIntegers)  # 1 if machine i runs job j at time t
 model.x = pyo.Var(model.I, model.T, model.J, domain=pyo.Binary)  # 1 if machine i runs job j at time t
 model.y = pyo.Var(model.I, model.T, model.J, domain=pyo.Binary)  # 1 if machine i starts job j at time t
 model.s = pyo.Var(model.T, domain=pyo.NonNegativeReals)  # Energy stored at time t
 
-# Objective: Minimize battery and power costs
-def objective_rule(n, m):
-    return n * c_b + m * c_p
+# Set the jobs that a machine can't do
+for i in I:
+    for j in J:
+        if j > n_jobs[i]:
+            model.x[i, :, j].fix(0)
+            model.y[i, :, j].fix(0)
+
+# Objective: Minimize battery and power costs. m is always the model, and then I can put other things
+def objective_rule(m):
+    return m.N * c_b + m.M * c_p
 model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 # Constraints
 
 # 1. Energy balance constraint
-def energy_balance_rule(t):
-    return sum(e[i] * m.x[i, t, j] + f[i] * m.y[i, t, j] for i in m.I for j in m.J) - M * p[t] - m.s[t] <= 0
+def energy_balance_rule(m, t):
+    return sum(e[i] * m.x[i, t, j] + f[i] * m.y[i, t, j] for i in m.I for j in m.J) - m.M * p[t] - m.s[t] <= 0
 model.energy_balance = pyo.Constraint(model.T, rule=energy_balance_rule)
 
 # 2. Storage computation constraint
 def storage_rule(m, t):
-    if t == 1:
+    if t == 1: # TODO: si parte da uno o da zero??
         return m.s[t] == 0  # Assume starting with empty storage
     else:
-        return m.s[t] == sum(M * p[tp] - sum(e[i] * m.x[i, tp, j] + f[i] * m.y[i, tp, j] for i in m.I for j in m.J) 
+        return m.s[t] <= sum(m.M * p[tp] - sum(e[i] * m.x[i, tp, j] + f[i] * m.y[i, tp, j] for i in m.I for j in m.J) 
                              for tp in range(1, t))
 model.storage_constraint = pyo.Constraint(model.T, rule=storage_rule)
 
-# 3. Battery capacity constraint
+# 3. Battery capacity constraint. Non negative as it was defined before
 def battery_capacity_rule(m, t):
-    return m.s[t] <= N * B
+    return m.s[t] <= m.N * B
 model.battery_constraint = pyo.Constraint(model.T, rule=battery_capacity_rule)
 
+""" 
 # 4. Total usage >= needed
 def usage_requirement(m, i):
     return sum(m.x[i, t, j] for t in m.T for j in m.J) >= n_jobs[i] * d[i]
 model.usage_req = pyo.Constraint(model.I, rule=usage_requirement)
+"""
 
 # 5. Each machine can do one job at a time
 def one_job_at_time(m, i, t):
@@ -118,7 +133,6 @@ model.max_energy = pyo.Constraint(model.T, rule=max_energy)
 # 8. Silent periods for machines (some machines must be off at specific times)
 # For example, machine 1 must be off during time periods 10-15
 model.silent_periods = pyo.ConstraintList()
-silent_periods = {1: range(10, 16), 3: range(30, 36)}  # Machine 1 off during 10-15, Machine 3 off during 30-35
 for i, times in silent_periods.items():
     for t in times:
         if t <= T_MAX:  # Make sure the time is within our horizon
@@ -137,14 +151,25 @@ for t in T:
 
 # 10. Start implies run and continuation constraint
 def run_constraint(m, i, t, j):
-    if t == 1:
+    if t == 1: #TODO: time at zero???
         # For the first time period
         return m.x[i, t, j] == m.y[i, t, j]
     else:
         # For subsequent time periods: x[i,t,j] = y[i,t,j] + x[i,t-1,j] - discontinuation
         # This simplifies to: x[i,t,j] <= y[i,t,j] + x[i,t-1,j]
-        return m.x[i, t, j] <= m.y[i, t, j] + m.x[i, t-1, j]
+        return m.x[i, t, j] <= m.y[i, t, j] + m.x[i, t-1, j] #TODO: check if this is right, but at the optimum it shouldn't do something like initializing and not using it
 model.run_constraint = pyo.Constraint(model.I, model.T, model.J, rule=run_constraint)
+
+# 10b. Start implies run and continuation constraint
+def run_constraint_2(m, i, t, j):
+    if t == 1: #TODO: time at zero???
+        # For the first time period
+        return pyo.Constraint.Skip
+    else:
+        # For subsequent time periods: x[i,t,j] = y[i,t,j] + x[i,t-1,j] - discontinuation
+        # This simplifies to: x[i,t,j] <= y[i,t,j] + x[i,t-1,j]
+        return m.y[i, t, j] <= m.x[i, t, j] 
+model.run_constraint_2 = pyo.Constraint(model.I, model.T, model.J, rule=run_constraint_2)
 
 # 11. Dependency constraint
 def dependency_rule(m, k, kp1, t, j):
@@ -152,7 +177,7 @@ def dependency_rule(m, k, kp1, t, j):
         return m.y[kp1, t, j] == 0  # Cannot start dependent job at first time period
     else:
         # Job on machine kp1 can start only if job on machine k was completed
-        prev_completions = sum(m.x[k, tp, j] for tp in range(1, t))
+        prev_completions = sum(m.x[k, tp, j] for tp in range(1, t)) #TODO: time starts at zero?
         return m.y[kp1, t, j] <= prev_completions / d[k]
 model.dependencies = pyo.ConstraintList()
 for (k, kp1) in M_dependencies:
@@ -162,26 +187,28 @@ for (k, kp1) in M_dependencies:
                 model.dependencies.add(dependency_rule(model, k, kp1, t, j))
 
 # 12. Cooldown constraint
-def cooldown_rule(m, i, t, j):
+def cooldown_rule(m, i, t):
     if t <= c[i]:
-        return m.y[i, t, j] <= 1  # Allow starting in early time periods
+        return sum(m.y[i, t, j] for j in J) <= 1 # Allow starting in early time periods
     else:
         # Can only start if the machine was off for at least c_i time units
         cooldown_sum = sum(1 - sum(m.x[i, tp, jj] for jj in m.J) for tp in range(t-c[i], t))
         return m.y[i, t, j] <= cooldown_sum / c[i]
-model.cooldowns = pyo.Constraint(model.I, model.T, model.J, rule=cooldown_rule)
+model.cooldowns = pyo.Constraint(model.I, model.T, rule=cooldown_rule)
 
 # 13. Job duration enforcement
-def duration_rule(m, i, j, t):
-    if t <= T_MAX - d[i] + 1:  # Only apply for jobs that can complete within the horizon
-        # If the job starts at time t, it must run for exactly d[i] time units
-        return sum(m.x[i, tp, j] for tp in range(t, t + d[i])) >= d[i] * m.y[i, t, j]
-    return pyo.Constraint.Skip
+def duration_rule(m, i, j):
+    return sum(m.x[i, tp, j] for tp in range(1, THRESHOLD_FOR_JOB_J_AND_I[(i,j)]+1)) == d[i]
+
+# 13b. Job duration enforcement
+def duration_rule_2(m, i, j):
+    return sum(m.x[i, tp, j] for tp in range(THRESHOLD_FOR_JOB_J_AND_I[(i,j)]+1, T_MAX+1)) == 0
+
 model.duration = pyo.ConstraintList()
 for i in I:
     for j in J:
-        for t in T:
-            model.duration.add(duration_rule(model, i, j, t))
+        model.duration.add(duration_rule(model, i, j))
+        model.duration.add(duration_rule_2(model, i, j))
 
 # Solve the model
 solver = pyo.SolverFactory('glpk')
@@ -194,14 +221,23 @@ print(f"\nSolution Status: {result.solver.status}, Termination Condition: {resul
 if result.solver.termination_condition == pyo.TerminationCondition.optimal:
     print(f"Objective Value: {pyo.value(model.objective)}")
     
+    # Print number of panels and batteries
+    print(f"\nNumber of Batteries: {pyo.value(model.N)}")
+    print(f"\nNumber of Panels: {pyo.value(model.M)}")
+    
     # Print machine schedules
     for i in I:
         print(f"\nMachine {i} Schedule:")
         for j in J:
             start_times = [t for t in T if pyo.value(model.y[i, t, j]) > 0.5]
+            operative_times = [t for t in T if pyo.value(model.x[i, t, j]) > 0.5]
             if start_times:
                 for start_t in start_times:
-                    print(f"  Job {j} starts at t={start_t}, runs for {d[i]} time units")
+                    print(f"  Job {j} starts at t={start_t}")
+            print("------------------------------")
+            if operative_times:
+                for op_t in operative_times:
+                    print(f"  Job {j} operates at t={op_t}")
     
     # Print energy storage levels
     storage_values = [pyo.value(model.s[t]) for t in T]
@@ -221,14 +257,15 @@ if result.solver.termination_condition == pyo.TerminationCondition.optimal:
     
     ax1.set_xlabel('Time Period')
     ax1.set_ylabel('Machine')
-    ax1.set_yticks(range(0, M))
+    ax1.set_yticks(range(0, MACHINES))
     ax1.set_yticklabels([f'Machine {i}' for i in I])
     ax1.set_title('Machine Schedule')
     ax1.legend([f'Job {j}' for j in J], loc='upper right')
     
     # Plot energy storage
     ax2.plot(T, storage_values, marker='o', linestyle='-', markersize=4)
-    ax2.axhline(y=N*B, color='r', linestyle='--', label=f'Battery Capacity ({N*B})')
+    battery_capacity = int(model.N.value) * B  # or value(model.N * B)
+    ax2.axhline(y=battery_capacity, color='r', linestyle='--', label=f'Battery Capacity ({battery_capacity})')
     ax2.set_xlabel('Time Period')
     ax2.set_ylabel('Energy Storage')
     ax2.set_title('Energy Storage Levels')
@@ -237,5 +274,7 @@ if result.solver.termination_condition == pyo.TerminationCondition.optimal:
     plt.tight_layout()
     plt.savefig('schedule_visualization.png')
     print("\nSchedule visualization saved as 'schedule_visualization.png'")
+    
+    plt.show()
 else:
     print("Failed to find an optimal solution.")

@@ -21,8 +21,8 @@ model.I = pyo.Set(initialize=I)
 model.J = pyo.Set(initialize=J)
 
 # Cost parameters
-c_b = 1000  # Cost per battery
-c_p = 2000   # Cost per unit of power
+c_b = 2.530  # Cost per battery
+c_p = 2000   # Cost per unit of power 
 
 # Energy parameters
 # e_i: energy consumption when machine i is running

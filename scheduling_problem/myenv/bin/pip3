@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/mnt/d/Project AI/AI_for_social_good/scheduling_problem/myenv/bin/python3" "$0" "$@"
-' '''
+#!/media/federico/Shared_files/AI_social_good/AI_for_social_good/scheduling_problem/myenv/bin/python3.10
 # -*- coding: utf-8 -*-
 import re
 import sys

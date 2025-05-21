@@ -1,0 +1,7 @@
+pyomo
+pandas
+matplotlib
+joblib
+requests-cache
+openmeteo-requests
+scikit-learn

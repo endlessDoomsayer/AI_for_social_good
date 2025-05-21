@@ -111,7 +111,7 @@ class Dataset:
         hours = 0
         for key in data.keys():
             if data[key][machine_name] is not None:
-                total_power += data[key][machine_name][('power','apparent')]
+                total_power += data[key][machine_name][('power_apparent')]
                 hours += 1
         if hours == 0:
             return 0

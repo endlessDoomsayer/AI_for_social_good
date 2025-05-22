@@ -25,7 +25,7 @@ def get_data():
     datasetjson.load()
 
     # 1. NILM DATA
-    print("--------------------------------------\nREAL DATA\n")
+    print("--------------------------------------\nNILM DATA\n")
 
     machine_names = datasetjson.get_machine_names()
     print(f"Machine names: {machine_names}")
@@ -104,6 +104,7 @@ def get_data():
     
     # 2. SOLAR PANELS
     # p_t: energy produced at time t by one unit of power
+    print("\n--------------------------------------\nSOLAR PANELS\n")
     predictions_df = solar_predictor.predict(start_date_str="2023-07-25")
     p = {}
     for idx, (timestamp, row) in enumerate(predictions_df.iterrows(), start=1):
@@ -112,7 +113,7 @@ def get_data():
         
     data["p"] = p
 
-    print("\n--------------------------------------\nSolar production in the day 2023-07-25:", p)
+    print("\n\nSolar production in the day 2023-07-25:", p)
     
 
     # 3. GENERATED DATA

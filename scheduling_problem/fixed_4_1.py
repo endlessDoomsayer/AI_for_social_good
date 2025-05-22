@@ -5,8 +5,8 @@ from combine_data import get_data
 
 
 # Output of phase 1
-M = 15
-N = 20
+M = 801
+N = 1500
 
 # Create a concrete model
 model = pyo.ConcreteModel()
@@ -220,11 +220,6 @@ result = solver.solve(model, tee=True)  # tee=True shows the solver output
 print(f"\nSolution Status: {result.solver.status}, Termination Condition: {result.solver.termination_condition}")
 
 if result.solver.termination_condition == pyo.TerminationCondition.optimal:
-    print(f"Objective Value: {pyo.value(model.objective)}")
-
-    # Print number of panels and batteries
-    print(f"\nNumber of Batteries: {pyo.value(model.N)}")
-    print(f"\nNumber of Panels: {pyo.value(model.M)}")
 
     # Print machine schedules
     for i in I:
@@ -262,7 +257,7 @@ if result.solver.termination_condition == pyo.TerminationCondition.optimal:
 
     # Plot energy storage
     ax2.plot(T, storage_values, marker='o', linestyle='-', markersize=4)
-    battery_capacity = int(pyo.value(model.N)) * B
+    battery_capacity = N * B
     ax2.axhline(y=battery_capacity, color='r', linestyle='--', label=f'Battery Capacity ({battery_capacity})')
     ax2.set_xlabel('Time Period')
     ax2.set_ylabel('Energy Storage')

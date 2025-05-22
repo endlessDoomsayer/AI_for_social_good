@@ -1,34 +1,37 @@
 from ortools.sat.python import cp_model
-import random
 import matplotlib.pyplot as plt
+from combine_data import get_data
 
 # Constants
-M = 15
-N = 20
-MACHINES = 4
-MAX_JOB_N = 2
-T_MAX = 24
-B = 2000
+M = 801
+N = 1500
 
-# Sets
-T = list(range(1, T_MAX + 1))
-I = list(range(1, MACHINES + 1))
-J = list(range(1, MAX_JOB_N + 1))
+data = get_data()
 
-# Parameters
-e = {1: 1000, 2: 1000, 3: 3506, 4: 3502}
-f = {i: 1000 for i in I}
-p = {t: 2000 for t in T}
-mmm = {t: random.randint(80000, 200000) for t in T}
-d = {i: 1 + i for i in I}
-n_jobs = {i: 1 for i in I}
-n_jobs[1] = 2
-n_jobs[3] = 2
-c = {i: 1 + i for i in I}
-THRESHOLD_FOR_JOB_J_AND_I = {(i, j): 20 + i for i in I for j in J}
-M_dependencies = []
-M_shared = []
-silent_periods = {}
+def float_to_int_round(float_list):
+    return (round(x) for x in float_list)
+
+I = data["I"]
+J = data["J"]
+T = data["T"]
+n_jobs = data["n_jobs"]
+d = data["d"]
+e = float_to_int_round(data["e"])
+f = float_to_int_round(data["f"])
+c_b = data["c_b"]
+c_p = data["c_p"]
+c = data["c"]
+p = float_to_int_round(data["p"])
+mmm = data["mmm"]
+silent_periods = data["silent_periods"]
+M_shared = data["M_shared"]
+M_dependencies = data["M_dependencies"]
+B = data["B"]
+T_MAX = data["T_MAX"]
+THRESHOLD_FOR_JOB_J_AND_I = data["THRESHOLD_FOR_JOB_J_AND_I"]
+MACHINES = data["MACHINES"]
+
+
 
 model = cp_model.CpModel()
 

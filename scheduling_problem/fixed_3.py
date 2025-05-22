@@ -2,68 +2,40 @@ import pyomo.environ as pyo
 import random
 import matplotlib.pyplot as plt
 
+from combine_data import get_data
+
 # Create a concrete model
 model = pyo.ConcreteModel()
 
-# Parameters (sample data generation)
-MACHINES = 4  # Number of machines
-MAX_JOB_N = 2  # Maximum number of jobs per machine
-T_MAX = 24  # Number of time periods (e.g., 24 hours in a day)
+BIG_M = 1000000
 
-# Define sets
-T = list(range(1, T_MAX + 1))  # time periods
-I = list(range(1, MACHINES + 1))  # machines
-J = list(range(1, MAX_JOB_N + 1))  # jobs
+# Get data
+data = get_data()
 
+I = data["I"]
+J = data["J"]
+T = data["T"]
+n_jobs = data["n_jobs"]
+d = data["d"]
+e = data["e"]
+f = data["f"]
+c_b = data["c_b"]
+c_p = data["c_p"]
+c = data["c"]
+p = data["p"]
+mmm = data["mmm"]
+silent_periods = data["silent_periods"]
+M_shared = data["M_shared"]
+M_dependencies = data["M_dependencies"]
+B = data["B"]
+T_MAX = data["T_MAX"]
+THRESHOLD_FOR_JOB_J_AND_I = data["THRESHOLD_FOR_JOB_J_AND_I"]
+MACHINES = data["MACHINES"]
+
+# Sets
 model.T = pyo.Set(initialize=T)
 model.I = pyo.Set(initialize=I)
 model.J = pyo.Set(initialize=J)
-
-# Cost parameters
-c_b = 1000  # Cost per battery
-c_p = 2000  # Cost per unit of power
-
-# Energy parameters
-# e_i: energy consumption when machine i is running
-e = {1: 1000, 2: 1000, 3: 3506, 4: 3502, 5: 3381, 6: 8856}
-# f_i: additional energy consumed when machine i starts
-f = {i: 1000 for i in I}
-# p_t: energy produced at time t by one unit of power
-p = {t: 2000 for t in T}
-# m_t: maximum energy available at time t
-mmm = {t: random.randint(80000, 200000) for t in T}
-# d_i: duration of job on machine i
-d = {i: 1 + i for i in I}
-# n_i: number of jobs required for machine i
-n_jobs = {i: 1 for i in I if i != 3 and i != 1}
-n_jobs[3] = 2
-n_jobs[1] = 2
-# c_i: cooldown period for machine i
-c = {i: 1 + i for i in I}
-# THRESHOLD_FOR_JOB_J
-THRESHOLD_FOR_JOB_J_AND_I = {(i, j): 20 + i for i in I for j in J}  # Time limit for each job
-# B: battery capacity
-B = 2000
-# BIG_M: a large number for big-M constraints
-BIG_M = 1000000
-
-# Sets of dependencies and shared resources
-M_dependencies = []  # Pairs of machines where the second depends on the first
-M_shared = []  # Groups of machines that share resources and cannot run simultaneously
-silent_periods = {}  # Periods when certain machines must be off
-
-# Print the generated data for reference
-print("Generated Parameters:")
-print(f"Cost per battery (c_b): {c_b}")
-print(f"Cost per power unit (c_p): {c_p}")
-print(f"Machine energy usage (e): {e}")
-print(f"Machine startup energy (f): {f}")
-print(f"Battery capacity (B): {B}")
-print(f"Job durations (d): {d}")
-print(f"Required jobs per machine (n_jobs): {n_jobs}")
-print(f"Machine cooldown periods (c): {c}")
-print(f"Machine dependencies: {M_dependencies}")
-print(f"Shared resource groups: {M_shared}")
 
 # Variables
 model.M = pyo.Var(domain=pyo.NonNegativeIntegers)  # Number of power units

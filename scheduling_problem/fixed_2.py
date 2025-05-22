@@ -1,29 +1,29 @@
+from combine_data import get_data
 
 N = 5 # number of batteries output of phase 1
 M = 10 # number of panels output of phase 1
-c_b = 1000000  # Cost per unit of battery capacity
-c_p = 500000   # Cost per unit of power capacity
+c_e = 10 # cost of energy if taken from outside
 
-# Maximum battery capacity
-B = 100
+# Get data
+data = get_data()
+
+I = data["I"]
+J = data["J"]
+T = data["T"]
+n_jobs = data["n_jobs"]
+d = data["d"]
+e = data["e"]
+f = data["f"]
+c_b = data["c_b"]
+c_p = data["c_p"]
+B = data["B"]
+
+# Calculations
 
 total_cost_panels = N*c_b + M*c_p
 
-# Sets
-T = list(range(1, 11))  # Time periods
-I = list(range(1, 6))   # Machines
-J = list(range(1, 4))   # Jobs
+total_energy_per_day = sum(e[i]*d[i]*n_jobs[i]+f[i]*n_jobs[i] for i in I)
 
-# Info on machines per day
-e = {i: 10000 + i*2 for i in I}  # Energy consumption rate for machine i
-f = {i: 5000 + i for i in I}     # Fixed energy cost for machine i
-n = {i: i for i in I}         # Minimum number of jobs required for machine i
-d = {i: 13+i for i in I}         # Duration required for machine i to complete a job
-
-total_energy_per_day = sum(e[i]*d[i]*n[i]+f[i]*n[i] for i in I)
-
-# Cost of energy if taken from outside
-c_e = 10
 total_cost_per_day = (c_e*total_energy_per_day)
 
 # Total days we could go on without panels

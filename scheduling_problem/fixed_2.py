@@ -1,8 +1,7 @@
 from combine_data import get_data
 
-N = 5 # number of batteries output of phase 1
-M = 10 # number of panels output of phase 1
-c_e = 10 # cost of energy if taken from outside
+N = 9 # number of batteries output of phase 1
+M = 783 # number of panels output of phase 1
 
 # Get data
 data = get_data()
@@ -17,6 +16,7 @@ f = data["f"]
 c_b = data["c_b"]
 c_p = data["c_p"]
 B = data["B"]
+c_e = data["c_e"]
 
 # Calculations
 

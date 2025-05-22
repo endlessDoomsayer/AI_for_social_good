@@ -152,11 +152,16 @@ def get_data():
     data["M_dependencies"] = M_dependencies
     data["M_shared"] = M_shared
     data["silent_periods"] = silent_periods
+    
+    # Cost of energy if taken from outside
+    c_e = 0.1
+    data["c_e"] = c_e
 
     # Print the generated data for reference
     print("\n--------------------------------------\nGenerated Parameters: \n")
     print(f"Cost per battery (c_b): {c_b}")
     print(f"Cost per power unit (c_p): {c_p}")
+    print(f"Cost of energy taken from outside (c_e): {c_e}")
     print(f"Battery capacity (B): {B}")
     print(f"Max energy available (mmm): {mmm}")
     print(f"Job durations (d): {d}")

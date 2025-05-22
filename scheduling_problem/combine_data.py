@@ -28,7 +28,7 @@ def get_data():
     print("--------------------------------------\nNILM DATA\n")
 
     machine_names = datasetjson.get_machine_names()
-    machine_names = machine_names[:-2]
+    machine_names = machine_names[:-2] # delete last 2 machines since we don't have any data on the power
     print(f"Machine names: {machine_names}")
     print(f"Machine number: {len(machine_names)}")
 

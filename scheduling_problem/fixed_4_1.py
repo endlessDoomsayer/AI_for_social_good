@@ -5,8 +5,8 @@ from combine_data import get_data
 
 
 # Output of phase 1
-M = 801
-N = 1500
+M = 785
+N = 50
 
 # Create a concrete model
 model = pyo.ConcreteModel()

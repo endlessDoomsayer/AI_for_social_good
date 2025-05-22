@@ -28,6 +28,7 @@ def get_data():
     print("--------------------------------------\nNILM DATA\n")
 
     machine_names = datasetjson.get_machine_names()
+    machine_names = machine_names[:-2]
     print(f"Machine names: {machine_names}")
     print(f"Machine number: {len(machine_names)}")
 

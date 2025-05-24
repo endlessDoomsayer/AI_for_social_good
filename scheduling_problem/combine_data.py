@@ -104,7 +104,7 @@ def get_data():
     # https://www.ecodirect.com/Canadian-Solar-CS6X-300P-300W-36V-PV-Panel-p/canadian-solar-cs6x-300p.htm?srsltid=AfmBOor_kd4mknwa-Am9K9m7VYG55_jnXMM3QTP7aTw2Y2qCChJ9GuL7
     c_p = 290   # Cost per unit of power: Canadian Solar CS6X-300P (inverter SMA_America_SB7000TL_US240V cost neglected)
     # https://tariffe.segugio.it/guide-e-strumenti/domande-frequenti/quanto-costa-un-kwh-di-energia-elettrica.aspx#:~:text=Il%20prezzo%20dell'energia%20elettrica%20oggi%20%C3%A8%20pari%20a%200,si%20applica%20ai%20clienti%20vulnerabili.
-    c_e = 0,16053/1000 # Cost of energy 
+    c_e = 0.16053/1000 # Cost of energy 
     
 
     data["B"] = B

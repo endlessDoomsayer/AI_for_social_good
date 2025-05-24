@@ -1,7 +1,7 @@
 from combine_data import get_data
 
-N = 9 # number of batteries output of phase 1
-M = 783 # number of panels output of phase 1
+N = 36 # number of batteries output of phase 1
+M = 1833 # number of panels output of phase 1
 
 # Get data
 data = get_data()

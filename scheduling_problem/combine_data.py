@@ -33,8 +33,8 @@ def get_data():
     print(f"Machine number: {len(machine_names)}")
 
     MACHINES = len(machine_names) # Number of machines
-    MAX_JOB_N = 1  # Maximum number of jobs per machine
-    T_MAX = 24  # Number of time periods (e.g., 48 half-hours in a day)
+    MAX_JOB_N = 21  # Maximum number of jobs per machine
+    T_MAX = 24*7  # Number of time periods (e.g., 48 half-hours in a day)
     
     print("Max jobs per machine:", MAX_JOB_N)
     print("Max time period:", T_MAX)
@@ -80,9 +80,13 @@ def get_data():
     data["f"] = f
     
     # d_i: duration of job i on machine i
-    def get_job_duration_per_machine(machine_name, day):
-        data = datasetjson.get_data_day(day)
-        total_duration = 5
+    def get_job_duration_per_machine(idx, day):
+        #data = datasetjson.get_data_day(day)
+        if (i <= 2):
+            return 8
+        elif (i <= 4):
+            return 12
+        return 10
         """ 
         for timestamp in data.keys():
             machine_data = data[timestamp].get(machine_name)
@@ -97,7 +101,7 @@ def get_data():
     d = {}
     for i in I:
         machine_name = machine_names[i - 1]
-        duration = get_job_duration_per_machine(machine_name, day)
+        duration = get_job_duration_per_machine(i, day)
         d[i] = duration
     print("d =", d)
     data["d"] = d
@@ -119,9 +123,9 @@ def get_data():
 
     # 3. GENERATED DATA
     # Cost parameters
-    c_b = 2500  # Cost per battery
+    c_b = 6500  # Cost per battery
     c_p = 8000   # Cost per unit of power
-    c_e = 0.5 # Cost of energy
+    c_e = 2.56 # Cost of energy
     B = 5000 # B: battery capacity
     
     data["c_b"] = c_b

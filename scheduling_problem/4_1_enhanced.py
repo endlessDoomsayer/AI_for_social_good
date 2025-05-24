@@ -1297,7 +1297,7 @@ if __name__ == "__main__":
 
     # Test with sample data
     print("Testing enhanced CSP solver with sample data...")
-    # solve_with_all_techniques(M, N, sample_data)
+    solve_with_all_techniques(M, N, sample_data)
 
 # TODO: these are ideas on how to decompose the problem
 def temporal_decomposition(self, time_windows):

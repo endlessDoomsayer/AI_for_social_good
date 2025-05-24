@@ -119,8 +119,9 @@ def get_data():
 
     # 3. GENERATED DATA
     # Cost parameters
-    c_b = 2.500  # Cost per battery
+    c_b = 2500  # Cost per battery
     c_p = 8000   # Cost per unit of power
+    c_e = 0.5 # Cost of energy
     B = 5000 # B: battery capacity
     
     data["c_b"] = c_b

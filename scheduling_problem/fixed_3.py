@@ -12,17 +12,22 @@ BIG_M = 1000000
 # Get data
 data = get_data()
 
+# Round to 3 decimal places
+def float_to_round(float_list):
+    return {x: round(float_list[x], 3) for x in float_list}
+
 I = data["I"]
 J = data["J"]
 T = data["T"]
 n_jobs = data["n_jobs"]
 d = data["d"]
-e = data["e"]
-f = data["f"]
+e = float_to_round(data["e"])
+f = float_to_round(data["f"])
 c_b = data["c_b"]
 c_p = data["c_p"]
+c_e = data["c_e"]
 c = data["c"]
-p = data["p"]
+p = float_to_round(data["p"])
 mmm = data["mmm"]
 silent_periods = data["silent_periods"]
 M_shared = data["M_shared"]
@@ -60,7 +65,7 @@ for i in I:
 
 # Objective: Minimize battery and power costs plus deficit
 def objective_rule(m):
-    return m.N * c_b + m.M * c_p + sum(m.z[t] for t in m.T)
+    return m.N * c_b + m.M * c_p + c_e*sum(m.z[t] for t in m.T)
 model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 
@@ -225,12 +230,13 @@ for i in I:
 # Solve the model
 solver = pyo.SolverFactory('glpk')
 print("Solving the model...")
+solver.options['tmlim'] = 5000
 result = solver.solve(model, tee=True)  # tee=True shows the solver output
 
 # Print results
 print(f"\nSolution Status: {result.solver.status}, Termination Condition: {result.solver.termination_condition}")
 
-if result.solver.termination_condition == pyo.TerminationCondition.optimal:
+if result.solver.termination_condition == pyo.TerminationCondition.optimal or result.solver.termination_condition == pyo.TerminationCondition.feasible:
     print(f"Objective Value: {pyo.value(model.objective)}")
 
     # Print number of panels and batteries

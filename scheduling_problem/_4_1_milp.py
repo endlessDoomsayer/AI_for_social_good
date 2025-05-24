@@ -1,5 +1,4 @@
 import pyomo.environ as pyo
-import random
 import matplotlib.pyplot as plt
 from combine_data import get_data
 

@@ -2,13 +2,12 @@ from ortools.sat.python import cp_model
 import matplotlib.pyplot as plt
 import random
 import math
-import copy
-import numpy as np
 from collections import defaultdict
+import combine_data
 
 # Constants
-M = 783
-N = 9
+M = 1279
+N = 19
 
 
 def float_to_int_round(float_list):
@@ -197,11 +196,11 @@ class CSPSolver:
         solver.parameters.clause_cleanup_target = 100000
 
         # NO-GOOD LEARNING: Enhanced conflict analysis
-        solver.parameters.binary_minimization_algorithm = cp_model.BINARY_MINIMIZATION_FIRST
+        solver.parameters.binary_minimization_algorithm = cp_model.CHOOSE_FIRST
         solver.parameters.minimize_reduction_during_pb_resolution = True
 
         # Advanced restart and learning strategies
-        solver.parameters.restart_algorithms = [cp_model.LUBY_RESTART, cp_model.DL_MOVING_AVERAGE_RESTART]
+        #solver.parameters.restart_algorithms = [cp_model.PORTFOLIO_WITH_QUICK_RESTART_SEARCH]
         solver.parameters.restart_period = 50
         solver.parameters.max_number_of_conflicts = 1000000
 
@@ -271,6 +270,10 @@ class CSPSolver:
         solver.parameters.cp_model_probing_level = 3  # Enhanced probing
 
         status = solver.Solve(model)
+                # Optional: Print conflict statistics for debugging
+        print(f"Number of conflicts: {solver.NumConflicts()}")
+        print(f"Number of branches: {solver.NumBranches()}")
+        print(f"Wall time: {solver.WallTime():.2f}s")
         return status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
 
     def _add_redundant_constraints(self, model, x, y, s, M_val, N_val):
@@ -288,7 +291,7 @@ class CSPSolver:
                     # A job can only start once
                     model.Add(sum(y[i, t, j] for t in self.T) <= 1)
 
-    def simulated_annealing_solver(self, M_val, N_val, max_iterations=10000, initial_temp=100, cooling_rate=0.95):
+    def simulated_annealing_solver(self, M_val, N_val, max_iterations=1000000, initial_temp=100, cooling_rate=0.95):
         """Simulated Annealing approach"""
         print(f"Using Simulated Annealing for M={M_val}, N={N_val}")
 
@@ -350,6 +353,7 @@ class CSPSolver:
             # Accept or reject the neighbor
             if neighbor_cost < current_cost or random.random() < math.exp(
                     -(neighbor_cost - current_cost) / temperature):
+                print("Accepted neighbor")
                 current_solution = neighbor
                 current_cost = neighbor_cost
 
@@ -600,14 +604,13 @@ class CSPSolver:
         return final_conflicts == 0
 
     def solve_with_multiple_techniques(self, M_val, N_val):
-        """Try multiple techniques and return the first successful one"""
+        """Try multiple techniques and return all of them"""
         techniques = [
             ("Constraint Propagation", self.constraint_propagation_solver),
             ("Improved Backtracking", self.improved_backtracking_solver),
             ("Simulated Annealing", lambda m, n: self.simulated_annealing_solver(m, n, max_iterations=5000)),
             ("Local Beam Search", lambda m, n: self.local_beam_search(m, n, beam_width=3)),
-            (
-            "Genetic Algorithm", lambda m, n: self.genetic_algorithm_solver(m, n, population_size=20, generations=500)),
+            ("Genetic Algorithm", lambda m, n: self.genetic_algorithm_solver(m, n, population_size=20, generations=500)),
             ("MIN-CONFLICTS", self.min_conflicts_local_search)
         ]
 
@@ -616,13 +619,12 @@ class CSPSolver:
             try:
                 if technique(M_val, N_val):
                     print(f"✓ {name} found a feasible solution!")
-                    return True
                 else:
                     print(f"✗ {name} did not find a feasible solution")
             except Exception as e:
                 print(f"✗ {name} failed with error: {e}")
 
-        return False
+        return True
 
 
 # Usage functions
@@ -1273,28 +1275,7 @@ def solve_with_all_techniques(M_val, N_val, data):
 # Example usage and testing
 if __name__ == "__main__":
     # Example data structure (you'll need to provide the actual data)
-    sample_data = {
-        "I": [1, 2, 3],  # Machines
-        "J": [1, 2, 3],  # Jobs
-        "T": list(range(1, 11)),  # Time periods
-        "n_jobs": {1: 2, 2: 2, 3: 1},  # Number of jobs per machine
-        "d": {1: 3, 2: 2, 3: 4},  # Duration of jobs
-        "e": {1: 100, 2: 150, 3: 80},  # Energy consumption
-        "f": {1: 50, 2: 75, 3: 40},  # Startup energy
-        "c_b": 1000,
-        "c_p": 500,
-        "c": {1: 2, 2: 1, 3: 3},  # Cooldown periods
-        "p": {t: 0.8 for t in range(1, 11)},  # Power availability
-        "mmm": {t: 300 for t in range(1, 11)},  # Max energy per period
-        "silent_periods": {},
-        "M_shared": [],
-        "M_dependencies": [],
-        "B": 100,  # Battery capacity unit
-        "T_MAX": 10,
-        "THRESHOLD_FOR_JOB_J_AND_I": {(i, j): 8 for i in [1, 2, 3] for j in [1, 2, 3]},
-        "MACHINES": 3
-    }
-
+    sample_data = combine_data.get_data()
     # Test with sample data
     print("Testing enhanced CSP solver with sample data...")
     solve_with_all_techniques(M, N, sample_data)

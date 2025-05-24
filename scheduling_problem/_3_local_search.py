@@ -145,11 +145,6 @@ class LocalSearchSolver:
             return sum(self.e[i] * m.x[i, t, j] for i in m.I for j in m.J) <= self.mmm[t]
         model.max_energy = pyo.Constraint(model.T, rule=max_energy)
 
-        # Add remaining constraints (silent periods, shared resources, etc.)
-        self.add_remaining_constraints(model)
-
-    def add_remaining_constraints(self, model):
-        """Add the remaining complex constraints"""
         # Silent periods
         model.silent_periods = pyo.ConstraintList()
         for i, times in self.silent_periods.items():
@@ -218,8 +213,8 @@ class LocalSearchSolver:
         print("Finding initial solution...")
         
         # Start with a generous estimate
-        initial_M = 783
-        initial_N = 9
+        initial_M = 600
+        initial_N = 2
         
         model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
         obj_value, result = self.solve_with_timeout(model, timeout=120)
@@ -230,8 +225,8 @@ class LocalSearchSolver:
         else:
             # If initial solution fails, try with even higher values
             print("Initial solution failed, trying with higher values...")
-            initial_M = 100
-            initial_N = 50
+            initial_M = 783
+            initial_N = 9
             model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
             obj_value, result = self.solve_with_timeout(model, timeout=180)
             
@@ -409,7 +404,7 @@ if __name__ == "__main__":
     
     # Run local search
     best_M, best_N, best_obj, best_model, improvements = solver.local_search(
-        max_iterations=30, 
+        max_iterations=90, 
         timeout_per_solve=45
     )
     

@@ -1,5 +1,5 @@
 from combine_data import get_data
-from csp_4_1_lin_prog import * #TODO: si può usare anche csp_4_1 ma quello arrotonda tutti i float a interi
+from _4_1_lin_prog import *
 
 def binary_search_N(min_M, max_N, is_feasible):
     """

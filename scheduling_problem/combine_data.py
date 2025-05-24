@@ -34,7 +34,7 @@ def get_data():
 
     MACHINES = len(machine_names) # Number of machines
     MAX_JOB_N = 21  # Maximum number of jobs per machine
-    T_MAX = 24*7  # Number of time periods (e.g., 48 half-hours in a day)
+    T_MAX = 24  # Number of time periods (e.g., 48 half-hours in a day)
     
     print("Max jobs per machine:", MAX_JOB_N)
     print("Max time period:", T_MAX)

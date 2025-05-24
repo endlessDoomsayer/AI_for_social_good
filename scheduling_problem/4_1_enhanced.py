@@ -1217,7 +1217,7 @@ def solve_with_all_techniques(M_val, N_val, data):
         ("Original OR-Tools", lambda: find_min_original(M_val, N_val, data)),
         ("Enhanced CSP Solver", lambda: find_min_enhanced(M_val, N_val, data)),
         ("Stochastic Hill Climbing", lambda: StochasticHillClimbing(data).solve(M_val, N_val)),
-        ("Tabu Search", lambda: TabuSearch(data).solve(M_val, N_val))
+        ("Tabu Search", lambda: EnhancedTabuSearch(data).solve(M_val, N_val))
     ]
 
     results = {}
@@ -1318,6 +1318,7 @@ def temporal_decomposition(self, time_windows):
 def machine_decomposition(self):
     """Decompose by machine/device groups"""
     machine_groups = {}
+    threshold = 10
     for i in self.data["I"]:
         # Group machines by similar characteristics (energy, duration, etc.)
         energy_category = "high" if self.data["e"][i] > threshold else "low"
@@ -1394,6 +1395,7 @@ def solve_with_decomposition(self, M_val, N_val):
     # Step 1: Solve critical jobs first
     tree_decomp = self.tree_decomposition()
 
+    # TODO: implement the solve_subproblem and the _calculate_remaining_capacity and _validate_complete_solution
     # Step 2: Schedule critical jobs with strict constraints
     critical_solution = self._solve_subproblem(tree_decomp['critical'], M_val, N_val,
                                                strict_mode=True)

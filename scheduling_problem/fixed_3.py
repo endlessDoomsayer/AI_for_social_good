@@ -25,6 +25,7 @@ e = float_to_round(data["e"])
 f = float_to_round(data["f"])
 c_b = data["c_b"]
 c_p = data["c_p"]
+c_e = data["c_e"]
 c = data["c"]
 p = float_to_round(data["p"])
 mmm = data["mmm"]
@@ -64,7 +65,7 @@ for i in I:
 
 # Objective: Minimize battery and power costs plus deficit
 def objective_rule(m):
-    return m.N * c_b + m.M * c_p + sum(m.z[t] for t in m.T)
+    return m.N * c_b + m.M * c_p + c_e*sum(m.z[t] for t in m.T)
 model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 

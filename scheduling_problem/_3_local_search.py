@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import time
 import copy
 from combine_data import get_data
+import _3_milp
 
 class LocalSearchSolver:
     def __init__(self):
@@ -212,9 +213,7 @@ class LocalSearchSolver:
         """Get initial solution with high M and N values"""
         print("Finding initial solution...")
         
-        # Start with a generous estimate
-        initial_M = 1428
-        initial_N = 1
+        (initial_M, initial_N) = _3_milp.create_model(1000)
         
         model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
         obj_value, result = self.solve_with_timeout(model, timeout=120)
@@ -393,8 +392,8 @@ class LocalSearchSolver:
             ax4.grid(True)
         
         plt.tight_layout()
-        plt.savefig('local_search_results.png', dpi=300, bbox_inches='tight')
-        print("Results visualization saved as 'local_search_results.png'")
+        plt.savefig('local_search_results_combined.png', dpi=300, bbox_inches='tight')
+        #print("Results visualization saved as 'local_search_results.png'")
         plt.show()
 
 

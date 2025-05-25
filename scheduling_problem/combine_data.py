@@ -192,7 +192,7 @@ def get_data_house():
 
         # Bedroom
         ("Electric Blanket (Queen)", 0.09*1000, 3),
-        ("Night Light (4W)", 0.12*1000 10),
+        ("Night Light (4W)", 0.12*1000, 10),
         ("Smartphone Charger", 0.001*1000, 24),
         ("Alarm Clock", 0.008*1000, 24),
 
@@ -221,7 +221,7 @@ def get_data_house():
         ("Game Console", 0.07*1000, 2),
         ("Speakers (2 x 25W)", 0.05*1000, 3),
         ("Stereo", 0.05*1000, 2),
-        ("Radio/CD Player", 0.02*1000 1.5),
+        ("Radio/CD Player", 0.02*1000, 1.5),
         ("Halogen Floor Lamp", 0.02*1000, 6),
 
         # Home Office

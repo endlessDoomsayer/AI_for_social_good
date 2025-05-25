@@ -213,8 +213,8 @@ class LocalSearchSolver:
         print("Finding initial solution...")
         
         # Start with a generous estimate
-        initial_M = 600
-        initial_N = 2
+        initial_M = 1600
+        initial_N = 1
         
         model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
         obj_value, result = self.solve_with_timeout(model, timeout=120)
@@ -226,7 +226,7 @@ class LocalSearchSolver:
             # If initial solution fails, try with even higher values
             print("Initial solution failed, trying with higher values...")
             initial_M = 1800
-            initial_N = 30
+            initial_N = 2
             model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
             obj_value, result = self.solve_with_timeout(model, timeout=180)
             

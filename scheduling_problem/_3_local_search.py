@@ -213,7 +213,7 @@ class LocalSearchSolver:
         print("Finding initial solution...")
         
         # Start with a generous estimate
-        initial_M = 1600
+        initial_M = 1428
         initial_N = 1
         
         model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
@@ -404,7 +404,7 @@ if __name__ == "__main__":
     
     # Run local search
     best_M, best_N, best_obj, best_model, improvements = solver.local_search(
-        max_iterations=90, 
+        max_iterations=1000, 
         timeout_per_solve=45
     )
     

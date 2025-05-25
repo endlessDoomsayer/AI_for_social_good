@@ -4,7 +4,7 @@ from combine_data import get_data
 
 # Output of phase 3
 M = 15
-N = 20
+N = 1
 
 BIG_M = 1000000
 

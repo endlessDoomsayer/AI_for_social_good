@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from combine_data import get_data
 
 # Output of phase 3
-M = 15
-N = 1
+M = 891
+N = 0
 
 BIG_M = 1000000
 
@@ -226,6 +226,7 @@ for i in I:
 # Solve the model
 solver = pyo.SolverFactory('glpk')
 print("Solving the model...")
+solver.options['tmlim'] = 5000
 result = solver.solve(model, tee=True)  # tee=True shows the solver output
 
 # Print results
@@ -299,7 +300,7 @@ if result.solver.termination_condition == pyo.TerminationCondition.optimal:
     ax3.set_title('Energy Deficit (z_t)')
 
     plt.tight_layout()
-    plt.savefig('schedule_visualization.png')
+    plt.savefig('schedule_visualization_43.png')
     print("\nSchedule visualization saved as 'schedule_visualization.png'")
 
     plt.show()

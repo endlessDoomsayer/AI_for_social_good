@@ -6,8 +6,8 @@ from collections import defaultdict
 import combine_data
 
 # Constants
-M = 1279
-N = 19
+M = 1833
+N = 36
 
 
 def float_to_int_round(float_list):
@@ -353,7 +353,6 @@ class CSPSolver:
             # Accept or reject the neighbor
             if neighbor_cost < current_cost or random.random() < math.exp(
                     -(neighbor_cost - current_cost) / temperature):
-                print("Accepted neighbor")
                 current_solution = neighbor
                 current_cost = neighbor_cost
 
@@ -608,7 +607,7 @@ class CSPSolver:
         techniques = [
             ("Constraint Propagation", self.constraint_propagation_solver),
             ("Improved Backtracking", self.improved_backtracking_solver),
-            ("Simulated Annealing", lambda m, n: self.simulated_annealing_solver(m, n, max_iterations=5000)),
+            ("Simulated Annealing", lambda m, n: self.simulated_annealing_solver(m, n, max_iterations=5000000)),
             ("Local Beam Search", lambda m, n: self.local_beam_search(m, n, beam_width=3)),
             ("Genetic Algorithm", lambda m, n: self.genetic_algorithm_solver(m, n, population_size=20, generations=500)),
             ("MIN-CONFLICTS", self.min_conflicts_local_search)

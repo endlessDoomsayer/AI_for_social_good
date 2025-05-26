@@ -2,6 +2,7 @@ import random
 import sys
 import os
 import pandas as pd
+# TODO: svg
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from nilm.dataset_functions import Dataset, plot_data
@@ -34,7 +35,7 @@ def get_data():
 
     MACHINES = len(machine_names) # Number of machines
     MAX_JOB_N = 21  # Maximum number of jobs per machine
-    T_MAX = 24  # Number of time periods (e.g., 48 half-hours in a day)
+    T_MAX = 24  # Number of time periods (e.g., 48 half-hours in a day) TODO: try for 5 days and for all the seasons
     
     print(f"Machine number:", MACHINES)
     print("Max jobs per machine:", MAX_JOB_N)
@@ -103,6 +104,8 @@ def get_data():
     c_b = 2.530 # Cost per battery
     # https://www.ecodirect.com/Canadian-Solar-CS6X-300P-300W-36V-PV-Panel-p/canadian-solar-cs6x-300p.htm?srsltid=AfmBOor_kd4mknwa-Am9K9m7VYG55_jnXMM3QTP7aTw2Y2qCChJ9GuL7
     c_p = 290   # Cost per unit of power: Canadian Solar CS6X-300P (inverter SMA_America_SB7000TL_US240V cost neglected)
+    # TODO: ogni 25 pannelli solari c'è un inverter
+    c_i = 3000 # Cost per inverter
     # https://tariffe.segugio.it/guide-e-strumenti/domande-frequenti/quanto-costa-un-kwh-di-energia-elettrica.aspx#:~:text=Il%20prezzo%20dell'energia%20elettrica%20oggi%20%C3%A8%20pari%20a%200,si%20applica%20ai%20clienti%20vulnerabili.
     c_e = 0.16053/1000 # Cost of energy 
     

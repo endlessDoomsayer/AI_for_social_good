@@ -170,6 +170,7 @@ class CSPSolver:
         x = {}
         y = {}
 
+        """ 
         # Create variables
         for i in self.I:
             for j in self.J:
@@ -177,11 +178,32 @@ class CSPSolver:
                     for t in self.T:
                         x[i, t, j] = model.NewBoolVar(f'x_{i}_{t}_{j}')
                         y[i, t, j] = model.NewBoolVar(f'y_{i}_{t}_{j}')
+        """
+        
+        # Create variables with tighter bounds based on domain analysis
+        for i in self.I:
+            for j in self.J:
+                if j <= self.n_jobs[i]:
+                    for t in self.T:
+                        # Apply node consistency - restrict domains based on unary constraints
+                        can_start_at_t = (t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX))
+                        is_silent = (i in self.silent_periods and t in self.silent_periods.get(i, []))
+
+                        if can_start_at_t and not is_silent:
+                            x[i, t, j] = model.NewBoolVar(f'x_{i}_{t}_{j}')
+                            y[i, t, j] = model.NewBoolVar(f'y_{i}_{t}_{j}')
+                        else:
+                            # Apply node consistency - set to 0 if constraints make it impossible
+                            x[i, t, j] = model.NewIntVar(0, 0, f'x_{i}_{t}_{j}')
+                            y[i, t, j] = model.NewIntVar(0, 0, f'y_{i}_{t}_{j}')
 
         s = {t: model.NewIntVar(0, N_val * self.B, f's_{t}') for t in self.T}
 
         # Add all constraints
         self._add_all_constraints(model, x, y, s, M_val, N_val)
+        
+        # Add redundant constraints for better propagation
+        self._add_redundant_constraints(model, x, y, s, M_val, N_val)
 
         # Create solver with enhanced heuristics
         solver = cp_model.CpSolver()
@@ -215,14 +237,14 @@ class CSPSolver:
                         decision_vars.extend([x[i, t, j], y[i, t, j]])
 
         # Most Constrained Variable + Least Constraining Value
-        model.AddDecisionStrategy(decision_vars,
-                                  cp_model.CHOOSE_MIN_DOMAIN_SIZE,  # MCV: choose variable with smallest domain
-                                  cp_model.SELECT_MAX_VALUE)  # LCV approximation: try max value first
+        # model.AddDecisionStrategy(decision_vars,
+         #                         cp_model.CHOOSE_MIN_DOMAIN_SIZE,  # MCV: choose variable with smallest domain
+          #                        cp_model.SELECT_MAX_VALUE)  # LCV approximation: try max value first
 
         # Alternative LCV strategy - you can experiment with this instead
-        # model.AddDecisionStrategy(decision_vars,
-        #                           cp_model.CHOOSE_MIN_DOMAIN_SIZE,
-        #                           cp_model.SELECT_LOWER_HALF)     # Try values that are less constraining
+        model.AddDecisionStrategy(decision_vars,
+                                   cp_model.CHOOSE_MIN_DOMAIN_SIZE,
+                                   cp_model.SELECT_LOWER_HALF)     # Try values that are less constraining
 
         status = solver.Solve(model)
 
@@ -272,7 +294,7 @@ class CSPSolver:
         solver.parameters.cp_model_probing_level = 3  # Enhanced probing
 
         status = solver.Solve(model)
-                # Optional: Print conflict statistics for debugging
+        # Optional: Print conflict statistics for debugging
         print(f"Number of conflicts: {solver.NumConflicts()}")
         print(f"Number of branches: {solver.NumBranches()}")
         print(f"Wall time: {solver.WallTime():.2f}s")

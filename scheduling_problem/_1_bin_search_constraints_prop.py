@@ -1,5 +1,5 @@
 from combine_data import get_data
-from _4_1_lin_prog import *
+from _4_1_enhanced import *
 
 def binary_search_N(min_M, max_N, is_feasible):
     """
@@ -9,7 +9,7 @@ def binary_search_N(min_M, max_N, is_feasible):
     result = None
     while low <= high:
         mid = (low + high) // 2
-        if is_feasible(min_M, mid, data):
+        if is_feasible(min_M, mid):
             result = mid
             high = mid - 1
         else:
@@ -43,9 +43,11 @@ if __name__ == "__main__":
 
     data = get_data()
     
-    result = binary_search_M(biggestM, biggestN, find_min)
+    solver = CSPSolver(data)
+
+    result = binary_search_M(biggestM, biggestN, solver.improved_backtracking_solver)
     if result:
         print(f"Minimum feasible (M, N): {result}")
     else:
         print("No feasible (M, N) found in given bounds.")
-    print_solution(result[0],result[1],data)
+    #print_solution(result[0],result[1],data)

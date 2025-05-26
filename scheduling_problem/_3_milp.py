@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 from combine_data import get_data
 
+import time
 
 def create_model(max_time = 500):
     # Create a concrete model
@@ -233,7 +234,12 @@ def create_model(max_time = 500):
     solver = pyo.SolverFactory('glpk')
     print("Solving the model...")
     solver.options['tmlim'] = max_time
+    
+    start = time.time()
     result = solver.solve(model, tee=True)  # tee=True shows the solver output
+    end = time.time()
+    
+    print(f"Time taken for glpk on model 3: {end - start:.2f} seconds")
 
     # Print results
     print(f"\nSolution Status: {result.solver.status}, Termination Condition: {result.solver.termination_condition}")
@@ -306,7 +312,7 @@ def create_model(max_time = 500):
         ax3.set_title('Energy Deficit (z_t)')
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_model_3b_for_3.svg', format="svg")
+        plt.savefig('schedule_visualization_model_3_glpk.svg', format="svg")
         print("\nSchedule visualization saved as 'schedule_visualization.svg'")
         
         return (pyo.value(model.M),pyo.value(model.N))

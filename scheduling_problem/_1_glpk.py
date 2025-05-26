@@ -1,6 +1,7 @@
 import pyomo.environ as pyo
 import matplotlib.pyplot as plt
 from combine_data import get_data
+import time
 
 # Create a concrete model
 model = pyo.ConcreteModel()
@@ -192,7 +193,13 @@ for i in I:
 # Solve the model
 solver = pyo.SolverFactory('glpk')
 print("Solving the model...")
+
+start = time.time()
 result = solver.solve(model, tee=True)  # tee=True shows the solver output
+end = time.time()
+
+print(f"Time taken for binary search with improved backtracking: {end - start}")
+
 
 # Print results
 print(f"\nSolution Status: {result.solver.status}, Termination Condition: {result.solver.termination_condition}")
@@ -248,8 +255,8 @@ if result.solver.termination_condition == pyo.TerminationCondition.optimal:
     ax2.legend()
     
     plt.tight_layout()
-    plt.savefig('schedule_visualization.svg', format="svg")
-    print("\nSchedule visualization saved as 'schedule_visualization.svg'")
+    plt.savefig('schedule_visualization_1_glpk.svg', format="svg")
+    print("\nSchedule visualization saved as 'schedule_visualization_1_glpk.svg'")
     
     plt.show()
 else:

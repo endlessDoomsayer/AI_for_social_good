@@ -1,5 +1,6 @@
 from combine_data import get_data
 from _4_1_lin_prog import *
+import time
 
 def binary_search_N(min_M, max_N, is_feasible):
     """
@@ -43,9 +44,15 @@ if __name__ == "__main__":
 
     data = get_data()
     
+    
+    start = time.time()
     result = binary_search_M(biggestM, biggestN, find_min)
+    end = time.time()
+    
+    print(f"Time taken for binary search with SCIP: {end - start}")
+    
     if result:
         print(f"Minimum feasible (M, N): {result}")
     else:
         print("No feasible (M, N) found in given bounds.")
-    print_solution(result[0],result[1],data)
+    print_solution(result[0],result[1],data,"1_scip")

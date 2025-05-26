@@ -1,5 +1,6 @@
 from ortools.sat.python import cp_model
 import matplotlib.pyplot as plt
+import time
 
 # Constants. TODO: this are the less to make it feasible, used as a sort of minimization
 M = 783
@@ -271,7 +272,11 @@ def print_solution(M,N,data):
 
     # Solve
     solver = cp_model.CpSolver()
+    
+    start = time.time()
     status = solver.Solve(model)
+    end = time.time()
+    print(f"Solved in {end - start} seconds")
     
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
         storage_values = []

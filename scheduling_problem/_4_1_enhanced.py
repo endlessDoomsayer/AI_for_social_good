@@ -4,6 +4,7 @@ import random
 import math
 from collections import defaultdict
 import combine_data
+import time
 
 # Constants
 #M = 1833
@@ -640,7 +641,12 @@ class CSPSolver:
         for name, technique in techniques:
             print(f"\n--- Trying {name} ---")
             try:
-                if technique(M_val, N_val):
+                start = time.time()
+                el = technique(M_val, N_val)
+                end = time.time()
+                
+                print(f"Time taken for {name}: {end - start}")
+                if el:
                     print(f"✓ {name} found a feasible solution!")
                 else:
                     print(f"✗ {name} did not find a feasible solution")

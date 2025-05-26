@@ -1,5 +1,8 @@
 from combine_data import get_data
 from _4_1_enhanced import *
+from _4_1_lin_prog import *
+
+import time
 
 def binary_search_N(min_M, max_N, is_feasible):
     """
@@ -45,9 +48,14 @@ if __name__ == "__main__":
     
     solver = CSPSolver(data)
 
+    start = time.time()
     result = binary_search_M(biggestM, biggestN, solver.improved_backtracking_solver)
+    end = time.time()
+    
+    print(f"Time taken for binary search with improved backtracking: {end - start}")
+    
     if result:
         print(f"Minimum feasible (M, N): {result}")
     else:
         print("No feasible (M, N) found in given bounds.")
-    #print_solution(result[0],result[1],data)
+    print_solution(result[0],result[1],data)

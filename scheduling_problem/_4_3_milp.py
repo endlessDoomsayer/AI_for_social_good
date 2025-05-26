@@ -1,6 +1,7 @@
 import pyomo.environ as pyo
 import matplotlib.pyplot as plt
 from combine_data import get_data
+import time 
 
 # Output of phase 3
 M = 891
@@ -227,7 +228,12 @@ for i in I:
 solver = pyo.SolverFactory('glpk')
 print("Solving the model...")
 solver.options['tmlim'] = 5000
+
+start = time.time()
 result = solver.solve(model, tee=True)  # tee=True shows the solver output
+end = time.time()
+
+print(f"Time taken for MILP: {end - start}")
 
 # Print results
 print(f"\nSolution Status: {result.solver.status}, Termination Condition: {result.solver.termination_condition}")

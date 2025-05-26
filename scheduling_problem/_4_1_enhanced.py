@@ -6,12 +6,6 @@ from collections import defaultdict
 import combine_data
 import time
 
-# Constants
-#M = 1833
-#N = 36
-M = 5000
-N = 1000
-
 
 def float_to_int_round(float_list):
     return {x: round(float_list[x]) for x in float_list}
@@ -1302,7 +1296,7 @@ def solve_with_all_techniques(M_val, N_val, data):
 
 
 # Example usage and testing
-if __name__ == "__main__":
+def solve(M,N):
     # Example data structure (you'll need to provide the actual data)
     sample_data = combine_data.get_data()
     # Test with sample data

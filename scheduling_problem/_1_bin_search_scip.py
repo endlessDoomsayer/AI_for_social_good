@@ -2,7 +2,7 @@ from combine_data import get_data
 from _4_1_lin_prog import *
 import time
 
-def binary_search_N(min_M, max_N, is_feasible):
+def binary_search_N(min_M, max_N, data, is_feasible):
     """
     For a fixed M, binary search to find the minimum feasible N
     """
@@ -17,7 +17,7 @@ def binary_search_N(min_M, max_N, is_feasible):
             low = mid + 1
     return result
 
-def binary_search_M(max_M, max_N, is_feasible):
+def binary_search_M(max_M, max_N, data, is_feasible):
     """
     Binary search to find the minimum feasible M, and for each M,
     binary search to find the minimum N.
@@ -27,7 +27,7 @@ def binary_search_M(max_M, max_N, is_feasible):
 
     while low <= high:
         mid_M = (low + high) // 2
-        min_N = binary_search_N(mid_M, max_N, is_feasible)
+        min_N = binary_search_N(mid_M, max_N, data, is_feasible)
         if min_N is not None:
             best_MN = (mid_M, min_N)
             high = mid_M - 1  # Try to minimize M further
@@ -36,7 +36,7 @@ def binary_search_M(max_M, max_N, is_feasible):
 
     return best_MN
 
-if __name__ == "__main__":
+def solve():
     # Define the search bounds for M and N
 
     biggestM = 10000
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     
     
     start = time.time()
-    result = binary_search_M(biggestM, biggestN, find_min)
+    result = binary_search_M(biggestM, biggestN, data, find_min)
     end = time.time()
     
     print(f"Time taken for binary search with SCIP: {end - start}")

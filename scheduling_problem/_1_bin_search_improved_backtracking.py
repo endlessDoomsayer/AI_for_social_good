@@ -38,7 +38,7 @@ def binary_search_M(max_M, max_N, is_feasible):
 
     return best_MN
 
-if __name__ == "__main__":
+def solve():
     # Define the search bounds for M and N
 
     biggestM = 10000

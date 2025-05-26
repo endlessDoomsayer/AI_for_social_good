@@ -1,9 +1,6 @@
 from ortools.linear_solver import pywraplp
 import matplotlib.pyplot as plt
-
-# Constants
-M = 783
-N = 9
+import combine_data
 
 def find_min(M, N, data):
     
@@ -525,3 +522,7 @@ def print_solution(M,N,data,filename):
         print(f"\nSolver info:")
         print(f"Total variables: {solver.NumVariables()}")
         print(f"Total constraints: {solver.NumConstraints()}")
+        
+def solve(M, N):
+    data = combine_data.get_data()
+    find_min(M,N,data)

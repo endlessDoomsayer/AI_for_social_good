@@ -213,7 +213,7 @@ class LocalSearchSolver:
         """Get initial solution with high M and N values"""
         print("Finding initial solution...")
         
-        (initial_M, initial_N) = _3_milp.create_model(1000)
+        (initial_M, initial_N) = _3_milp.solve(1000)
         
         model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
         obj_value, result = self.solve_with_timeout(model, timeout=120)
@@ -398,7 +398,7 @@ class LocalSearchSolver:
 
 
 # Usage example
-if __name__ == "__main__":
+def solve():
     solver = LocalSearchSolver()
     
     # Run local search

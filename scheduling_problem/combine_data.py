@@ -8,7 +8,7 @@ from nilm.dataset_functions import Dataset, plot_data
 from weather_pv_conversion.solar_production import SolarProductionPredictor 
 
 
-number_of_days = 7
+number_of_days = 31
 
 def get_data():
     

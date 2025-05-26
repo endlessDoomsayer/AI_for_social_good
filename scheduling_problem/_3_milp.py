@@ -6,7 +6,7 @@ from combine_data import get_data
 
 import time
 
-def create_model(max_time = 500):
+def solve(max_time = 5000):
     # Create a concrete model
     model = pyo.ConcreteModel()
 

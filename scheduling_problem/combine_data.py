@@ -8,9 +8,13 @@ from nilm.dataset_functions import Dataset, plot_data
 from weather_pv_conversion.solar_production import SolarProductionPredictor 
 
 
-number_of_days = 31
-
-def get_data():
+def get_data(number_of_days = 31, day = pd.Timestamp("2018-01-01")):
+    
+    end_date = day+pd.to_timedelta(number_of_days-1, unit='D')
+    
+    print(f"Number of days: {number_of_days}")
+    print(f"Start date: {day}")
+    print(f"End date: {end_date}")
     
     data = {}
     
@@ -54,14 +58,9 @@ def get_data():
     
     # Energy parameters
     # e_i: energy consumption when machine i is running
-    start_time, end_time = datasetjson.get_start_end_time()
-    day = pd.Timestamp("2018-01-01")  
-    if number_of_days == 7:
-        day_data = datasetjson.get_data_week(day)
-    elif number_of_days == 31 or number_of_days == 30:
-        day_data = datasetjson.get_data_month(day)
-    elif number_of_days == 1:
-        day_data = datasetjson.get_data_day(day)
+    #start_time, end_time = datasetjson.get_start_end_time()
+
+    day_data = datasetjson.get_data_start_end(day, end_date)
 
     e = {}
     for idx, machine_name in enumerate(machine_names, start=1):
@@ -92,16 +91,8 @@ def get_data():
     # p_t: energy produced at time t by one unit of power
     print("\n--------------------------------------\nSOLAR PANELS\n")
     
-    end_date = ""
-    if number_of_days == 7:
-        end_date = "2018-01-07"
-    elif number_of_days == 31 or number_of_days == 30:
-        end_date = "2018-01-31"
-    elif number_of_days == 1:
-        end_date = "2018-01-01"
     
-    
-    predictions_df = solar_predictor.predict(start_date_str="2018-01-01", end_date_str=end_date)
+    predictions_df = solar_predictor.predict(start_date_str=day.strftime("%Y-%m-%d"), end_date_str=end_date.strftime("%Y-%m-%d"))
     p = {}
     for idx, (timestamp, row) in enumerate(predictions_df.iterrows(), start=1):
         p[idx] = float(row['predicted_production'])

@@ -59,3 +59,6 @@ def solve():
     else:
         print("No feasible (M, N) found in given bounds.")
     print_solution(result[0],result[1],data)
+    
+if __name__ == "__main__":
+    solve()

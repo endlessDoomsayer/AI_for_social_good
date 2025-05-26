@@ -300,8 +300,8 @@ if result.solver.termination_condition == pyo.TerminationCondition.optimal:
     ax3.set_title('Energy Deficit (z_t)')
 
     plt.tight_layout()
-    plt.savefig('schedule_visualization_43.png')
-    print("\nSchedule visualization saved as 'schedule_visualization.png'")
+    plt.savefig('schedule_visualization_43.svg', format="svg")
+    print("\nSchedule visualization saved as 'schedule_visualization.svg'")
 
     plt.show()
 else:

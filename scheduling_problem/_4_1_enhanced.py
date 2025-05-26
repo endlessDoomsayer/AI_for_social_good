@@ -6,8 +6,10 @@ from collections import defaultdict
 import combine_data
 
 # Constants
-M = 1833
-N = 36
+#M = 1833
+#N = 36
+M = 5000
+N = 1000
 
 
 def float_to_int_round(float_list):
@@ -860,8 +862,8 @@ def print_solution_enhanced(M_val, N_val, data):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig('enhanced_schedule_visualization.png')
-        print("\nEnhanced schedule visualization saved as 'enhanced_schedule_visualization.png'")
+        plt.savefig('enhanced_schedule_visualization.svg', format="svg")
+        print("\nEnhanced schedule visualization saved as 'enhanced_schedule_visualization.svg'")
         plt.show()
     else:
         print("Could not extract detailed solution for visualization.")

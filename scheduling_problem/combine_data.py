@@ -2,14 +2,11 @@ import random
 import sys
 import os
 import pandas as pd
-# TODO: svg
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from nilm.dataset_functions import Dataset, plot_data
 from weather_pv_conversion.solar_production import SolarProductionPredictor 
 
-
-# TODO bisogna vedere unita di misura pannelli e macchine
 
 def get_data():
     
@@ -34,8 +31,8 @@ def get_data():
     
 
     MACHINES = len(machine_names) # Number of machines
-    MAX_JOB_N = 21  # Maximum number of jobs per machine
-    T_MAX = 24  # Number of time periods (e.g., 48 half-hours in a day) TODO: try for 5 days and for all the seasons
+    MAX_JOB_N = 743*2  # Maximum number of jobs per machine
+    T_MAX = 743  # Number of time periods (e.g., 48 half-hours in a day) TODO: try for 5 days and for all the seasons
     
     print(f"Machine number:", MACHINES)
     print("Max jobs per machine:", MAX_JOB_N)
@@ -56,8 +53,8 @@ def get_data():
     # Energy parameters
     # e_i: energy consumption when machine i is running
     start_time, end_time = datasetjson.get_start_end_time()
-    day = pd.Timestamp("2017-12-12")  # it is an example
-    day_data = datasetjson.get_data_day(day)
+    day = pd.Timestamp("2018-01-01")  
+    day_data = datasetjson.get_data_month(day)
 
     e = {}
     for idx, machine_name in enumerate(machine_names, start=1):
@@ -87,7 +84,7 @@ def get_data():
     # 2. SOLAR PANELS
     # p_t: energy produced at time t by one unit of power
     print("\n--------------------------------------\nSOLAR PANELS\n")
-    predictions_df = solar_predictor.predict(start_date_str="2023-07-25")
+    predictions_df = solar_predictor.predict(start_date_str="2018-01-01", end_date_str="2018-01-31")
     p = {}
     for idx, (timestamp, row) in enumerate(predictions_df.iterrows(), start=1):
         p[idx] = float(row['predicted_production'])

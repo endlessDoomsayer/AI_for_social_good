@@ -505,8 +505,8 @@ def print_solution(M,N,data):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_lp.png', dpi=300, bbox_inches='tight')
-        print("\nSchedule visualization saved as 'schedule_visualization_lp.png'")
+        plt.savefig('schedule_visualization_lp.svg', format="svg", dpi=300, bbox_inches='tight')
+        print("\nSchedule visualization saved as 'schedule_visualization_lp.svg'")
         plt.show()
 
         # Print solution statistics

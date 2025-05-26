@@ -392,7 +392,7 @@ class LocalSearchSolver:
             ax4.grid(True)
         
         plt.tight_layout()
-        plt.savefig('local_search_results_combined.png', dpi=300, bbox_inches='tight')
+        plt.savefig('local_search_results_combined.svg', format="svg", dpi=300, bbox_inches='tight')
         #print("Results visualization saved as 'local_search_results.png'")
         plt.show()
 

@@ -306,8 +306,8 @@ def create_model(max_time = 500):
         ax3.set_title('Energy Deficit (z_t)')
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_model_3b_for_3.png')
-        print("\nSchedule visualization saved as 'schedule_visualization.png'")
+        plt.savefig('schedule_visualization_model_3b_for_3.svg', format="svg")
+        print("\nSchedule visualization saved as 'schedule_visualization.svg'")
         
         return (pyo.value(model.M),pyo.value(model.N))
 

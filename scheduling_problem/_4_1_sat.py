@@ -309,8 +309,8 @@ def print_solution(M,N,data):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization.png')
-        print("\nSchedule visualization saved as 'schedule_visualization.png'")
+        plt.savefig('schedule_visualization.svg', format="svg")
+        print("\nSchedule visualization saved as 'schedule_visualization.svg'")
         plt.show()
     else:
         print("No feasible solution found.")

@@ -3,11 +3,8 @@ import matplotlib.pyplot as plt
 import random
 import math
 from collections import defaultdict
-import combine_data
-
-# Constants
-M = 1833
-N = 36
+from combine_data import get_data
+import time
 
 
 def float_to_int_round(float_list):
@@ -168,6 +165,7 @@ class CSPSolver:
         x = {}
         y = {}
 
+        """ 
         # Create variables
         for i in self.I:
             for j in self.J:
@@ -175,11 +173,32 @@ class CSPSolver:
                     for t in self.T:
                         x[i, t, j] = model.NewBoolVar(f'x_{i}_{t}_{j}')
                         y[i, t, j] = model.NewBoolVar(f'y_{i}_{t}_{j}')
+        """
+        
+        # Create variables with tighter bounds based on domain analysis
+        for i in self.I:
+            for j in self.J:
+                if j <= self.n_jobs[i]:
+                    for t in self.T:
+                        # Apply node consistency - restrict domains based on unary constraints
+                        can_start_at_t = (t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX))
+                        is_silent = (i in self.silent_periods and t in self.silent_periods.get(i, []))
+
+                        if can_start_at_t and not is_silent:
+                            x[i, t, j] = model.NewBoolVar(f'x_{i}_{t}_{j}')
+                            y[i, t, j] = model.NewBoolVar(f'y_{i}_{t}_{j}')
+                        else:
+                            # Apply node consistency - set to 0 if constraints make it impossible
+                            x[i, t, j] = model.NewIntVar(0, 0, f'x_{i}_{t}_{j}')
+                            y[i, t, j] = model.NewIntVar(0, 0, f'y_{i}_{t}_{j}')
 
         s = {t: model.NewIntVar(0, N_val * self.B, f's_{t}') for t in self.T}
 
         # Add all constraints
         self._add_all_constraints(model, x, y, s, M_val, N_val)
+        
+        # Add redundant constraints for better propagation
+        self._add_redundant_constraints(model, x, y, s, M_val, N_val)
 
         # Create solver with enhanced heuristics
         solver = cp_model.CpSolver()
@@ -213,14 +232,14 @@ class CSPSolver:
                         decision_vars.extend([x[i, t, j], y[i, t, j]])
 
         # Most Constrained Variable + Least Constraining Value
-        model.AddDecisionStrategy(decision_vars,
-                                  cp_model.CHOOSE_MIN_DOMAIN_SIZE,  # MCV: choose variable with smallest domain
-                                  cp_model.SELECT_MAX_VALUE)  # LCV approximation: try max value first
+        # model.AddDecisionStrategy(decision_vars,
+         #                         cp_model.CHOOSE_MIN_DOMAIN_SIZE,  # MCV: choose variable with smallest domain
+          #                        cp_model.SELECT_MAX_VALUE)  # LCV approximation: try max value first
 
         # Alternative LCV strategy - you can experiment with this instead
-        # model.AddDecisionStrategy(decision_vars,
-        #                           cp_model.CHOOSE_MIN_DOMAIN_SIZE,
-        #                           cp_model.SELECT_LOWER_HALF)     # Try values that are less constraining
+        model.AddDecisionStrategy(decision_vars,
+                                   cp_model.CHOOSE_MIN_DOMAIN_SIZE,
+                                   cp_model.SELECT_LOWER_HALF)     # Try values that are less constraining
 
         status = solver.Solve(model)
 
@@ -270,7 +289,7 @@ class CSPSolver:
         solver.parameters.cp_model_probing_level = 3  # Enhanced probing
 
         status = solver.Solve(model)
-                # Optional: Print conflict statistics for debugging
+        # Optional: Print conflict statistics for debugging
         print(f"Number of conflicts: {solver.NumConflicts()}")
         print(f"Number of branches: {solver.NumBranches()}")
         print(f"Wall time: {solver.WallTime():.2f}s")
@@ -616,7 +635,12 @@ class CSPSolver:
         for name, technique in techniques:
             print(f"\n--- Trying {name} ---")
             try:
-                if technique(M_val, N_val):
+                start = time.time()
+                el = technique(M_val, N_val)
+                end = time.time()
+                
+                print(f"Time taken for {name}: {end - start}")
+                if el:
                     print(f"✓ {name} found a feasible solution!")
                 else:
                     print(f"✗ {name} did not find a feasible solution")
@@ -860,8 +884,8 @@ def print_solution_enhanced(M_val, N_val, data):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig('enhanced_schedule_visualization.png')
-        print("\nEnhanced schedule visualization saved as 'enhanced_schedule_visualization.png'")
+        plt.savefig('enhanced_schedule_visualization.svg', format="svg")
+        print("\nEnhanced schedule visualization saved as 'enhanced_schedule_visualization.svg'")
         plt.show()
     else:
         print("Could not extract detailed solution for visualization.")
@@ -1240,9 +1264,9 @@ def solve_with_all_techniques(M_val, N_val, data):
             }
 
             if success:
-                print(f"✅ SUCCESS! {name} found a solution in {end_time - start_time:.2f} seconds")
+                print(f"{name} found a solution in {end_time - start_time:.2f} seconds")
             else:
-                print(f"❌ FAILED: {name} could not find a solution ({end_time - start_time:.2f} seconds)")
+                print(f"{name} could not find a solution ({end_time - start_time:.2f} seconds)")
 
         except Exception as e:
             results[name] = {
@@ -1250,7 +1274,7 @@ def solve_with_all_techniques(M_val, N_val, data):
                 'error': str(e),
                 'time': 0
             }
-            print(f"💥 ERROR in {name}: {e}")
+            print(f"ERROR in {name}: {e}")
 
     # Summary
     print(f"\n{'=' * 60}")
@@ -1260,11 +1284,11 @@ def solve_with_all_techniques(M_val, N_val, data):
     successful_techniques = [name for name, result in results.items() if result['success']]
 
     if successful_techniques:
-        print("✅ Successful techniques:")
+        print("Successful techniques:")
         for name in successful_techniques:
             print(f"   - {name} ({results[name]['time']:.2f}s)")
     else:
-        print("❌ No technique found a feasible solution")
+        print("No technique found a feasible solution")
 
     print(f"\n{'=' * 60}")
 
@@ -1272,10 +1296,9 @@ def solve_with_all_techniques(M_val, N_val, data):
 
 
 # Example usage and testing
-if __name__ == "__main__":
-    # Example data structure (you'll need to provide the actual data)
-    sample_data = combine_data.get_data()
+def solve(M, N, data = get_data()):
+    
     # Test with sample data
     print("Testing enhanced CSP solver with sample data...")
-    solve_with_all_techniques(M, N, sample_data)
+    solve_with_all_techniques(M, N, data)
 

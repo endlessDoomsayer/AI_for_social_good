@@ -1,9 +1,6 @@
 from ortools.linear_solver import pywraplp
 import matplotlib.pyplot as plt
-
-# Constants
-M = 783
-N = 9
+import combine_data
 
 def find_min(M, N, data):
     
@@ -234,7 +231,7 @@ def find_min(M, N, data):
     else:
         return False
 
-def print_solution(M,N,data):
+def print_solution(M,N,data,filename):
     I = data["I"]
     J = data["J"]
     T = data["T"]
@@ -505,8 +502,8 @@ def print_solution(M,N,data):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_lp.png', dpi=300, bbox_inches='tight')
-        print("\nSchedule visualization saved as 'schedule_visualization_lp.png'")
+        plt.savefig("schedule_visualization_"+filename+".svg", format="svg", dpi=300, bbox_inches='tight')
+        print("\nSchedule visualization saved as 'schedule_visualization_"+filename+".svg")
         plt.show()
 
         # Print solution statistics
@@ -525,3 +522,6 @@ def print_solution(M,N,data):
         print(f"\nSolver info:")
         print(f"Total variables: {solver.NumVariables()}")
         print(f"Total constraints: {solver.NumConstraints()}")
+        
+def solve(M, N, data = combine_data.get_data()):
+    find_min(M,N,data)

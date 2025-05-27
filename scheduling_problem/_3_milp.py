@@ -4,15 +4,13 @@ import matplotlib.pyplot as plt
 
 from combine_data import get_data
 
+import time
 
-def create_model(max_time = 500):
+def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5803, data = get_data(7)):
+    
     # Create a concrete model
     model = pyo.ConcreteModel()
-
     BIG_M = 1000000
-
-    # Get data
-    data = get_data()
 
     # Round to 3 decimal places
     def float_to_round(float_list):
@@ -67,7 +65,7 @@ def create_model(max_time = 500):
 
     # Objective: Minimize battery and power costs plus deficit
     def objective_rule(m):
-        return m.N * c_b + m.M * c_p + c_e*sum(m.z[t] for t in m.T)
+        return m.N * c_b + m.M * c_p + (tot_number_of_days/number_of_days)*c_e*sum(m.z[t] for t in m.T) #todo: put inverter and number of days
     model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 
@@ -233,7 +231,12 @@ def create_model(max_time = 500):
     solver = pyo.SolverFactory('glpk')
     print("Solving the model...")
     solver.options['tmlim'] = max_time
+    
+    start = time.time()
     result = solver.solve(model, tee=True)  # tee=True shows the solver output
+    end = time.time()
+    
+    print(f"Time taken for glpk on model 3: {end - start:.2f} seconds")
 
     # Print results
     print(f"\nSolution Status: {result.solver.status}, Termination Condition: {result.solver.termination_condition}")
@@ -306,11 +309,13 @@ def create_model(max_time = 500):
         ax3.set_title('Energy Deficit (z_t)')
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_model_3b_for_3.png')
-        print("\nSchedule visualization saved as 'schedule_visualization.png'")
+        plt.savefig('schedule_visualization_model_3_glpk.svg', format="svg")
+        print("\nSchedule visualization saved as 'schedule_visualization.svg'")
         
         return (pyo.value(model.M),pyo.value(model.N))
 
         #plt.show()
     else:
         print("Failed to find an optimal solution.")
+
+    return pyo.value(model.objective), pyo.value(model.N), pyo.value(model.N)

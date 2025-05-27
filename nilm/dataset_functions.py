@@ -72,9 +72,12 @@ class Dataset:
     
     def get_data_start_end(self, start_time: pd.Timestamp, end_time: pd.Timestamp):
         #get the data in the given time interval
+        start_time = start_time.tz_localize(None)
+        end_time = end_time.tz_localize(None)
         data = {}
         for key in self.data.keys():
-            if key >= start_time and key <= end_time:
+            key2 = key.tz_localize(None)
+            if key2 >= start_time and key2 <= end_time:
                 data[key] = self.data[key]
         return data
     

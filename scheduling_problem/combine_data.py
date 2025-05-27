@@ -2,16 +2,19 @@ import random
 import sys
 import os
 import pandas as pd
-# TODO: svg
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from nilm.dataset_functions import Dataset, plot_data
 from weather_pv_conversion.solar_production import SolarProductionPredictor 
 
 
-# TODO bisogna vedere unita di misura pannelli e macchine
-
-def get_data():
+def get_data(number_of_days = 7, day = pd.Timestamp("2018-01-01")):
+    
+    end_date = day+pd.to_timedelta(number_of_days-1, unit='D')
+    
+    print(f"Number of days: {number_of_days}")
+    print(f"Start date: {day}")
+    print(f"End date: {end_date}")
     
     data = {}
     
@@ -34,8 +37,8 @@ def get_data():
     
 
     MACHINES = len(machine_names) # Number of machines
-    MAX_JOB_N = 21  # Maximum number of jobs per machine
-    T_MAX = 24  # Number of time periods (e.g., 48 half-hours in a day) TODO: try for 5 days and for all the seasons
+    MAX_JOB_N = number_of_days*2  # Maximum number of jobs per machine
+    T_MAX = 24*number_of_days-1  # Number of time periods (e.g., 48 half-hours in a day) TODO: try for 5 days and for all the seasons
     
     print(f"Machine number:", MACHINES)
     print("Max jobs per machine:", MAX_JOB_N)
@@ -55,9 +58,9 @@ def get_data():
     
     # Energy parameters
     # e_i: energy consumption when machine i is running
-    start_time, end_time = datasetjson.get_start_end_time()
-    day = pd.Timestamp("2017-12-12")  # it is an example
-    day_data = datasetjson.get_data_day(day)
+    #start_time, end_time = datasetjson.get_start_end_time()
+
+    day_data = datasetjson.get_data_start_end(day, end_date)
 
     e = {}
     for idx, machine_name in enumerate(machine_names, start=1):
@@ -87,21 +90,23 @@ def get_data():
     # 2. SOLAR PANELS
     # p_t: energy produced at time t by one unit of power
     print("\n--------------------------------------\nSOLAR PANELS\n")
-    predictions_df = solar_predictor.predict(start_date_str="2023-07-25")
+    
+    
+    predictions_df = solar_predictor.predict(start_date_str=day.strftime("%Y-%m-%d"), end_date_str=end_date.strftime("%Y-%m-%d"))
     p = {}
     for idx, (timestamp, row) in enumerate(predictions_df.iterrows(), start=1):
         p[idx] = float(row['predicted_production'])
         if (p[idx] < 0): p[idx] = 0
         
     data["p"] = p
-    print("\n\nSolar production in the day 2023-07-25:", p)
+    print("\n\nSolar production in the days from 2018-01-01 to", end_date, ":", p)
     
 
     # 3. GENERATED DATA
     # Cost parameters
     # https://www.mosaikosrl.net/batterie-accumulo-fotovoltaico/
     B = 5000 # B: battery capacity  
-    c_b = 2.530 # Cost per battery
+    c_b = 2530 # Cost per battery
     # https://www.ecodirect.com/Canadian-Solar-CS6X-300P-300W-36V-PV-Panel-p/canadian-solar-cs6x-300p.htm?srsltid=AfmBOor_kd4mknwa-Am9K9m7VYG55_jnXMM3QTP7aTw2Y2qCChJ9GuL7
     c_p = 290   # Cost per unit of power: Canadian Solar CS6X-300P (inverter SMA_America_SB7000TL_US240V cost neglected)
     # TODO: ogni 25 pannelli solari c'è un inverter
@@ -122,12 +127,12 @@ def get_data():
 
     # n_i: number of jobs required for machine i 
     n_jobs = {}
-    n_jobs[1] = 2
-    n_jobs[2] = 2
-    n_jobs[3] = 1
-    n_jobs[4] = 1
-    n_jobs[5] = 1
-    n_jobs[6] = 1
+    n_jobs[1] = 2*number_of_days
+    n_jobs[2] = 2*number_of_days
+    n_jobs[3] = 1*number_of_days
+    n_jobs[4] = 1*number_of_days
+    n_jobs[5] = 1*number_of_days
+    n_jobs[6] = 1*number_of_days
     data["n_jobs"] = n_jobs
 
     # c_i: cooldown period for machine i TODO
@@ -135,7 +140,7 @@ def get_data():
     data["c"] = c
     
     # THRESHOLD_FOR_JOB_J
-    THRESHOLD_FOR_JOB_J_AND_I = {(i,j): 24 for i in I for j in J} # Time limit for each job TODO
+    THRESHOLD_FOR_JOB_J_AND_I = {(i,j): 24*(j+1) for i in I for j in J} # Time limit for each job TODO
     data["THRESHOLD_FOR_JOB_J_AND_I"] = THRESHOLD_FOR_JOB_J_AND_I
 
 

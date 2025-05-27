@@ -7,7 +7,7 @@ We can solve it as a MILP model or by doing binary search on both N and M. This 
 way is a lot faster
 
 ## Model 2
-It's not a model, simply a division. It's done to understand the time horizon.
+It's not a model, simply a division. It's done to understand the time horizon covered with the same cost of model 1.
 
 ## Model 3
 Within that time horizon, we could see if it's more helpful to set a lower number of batteries and panels and pay some energy. It can be done both with a MILP model or by finding a feasible solution and then doing local search.

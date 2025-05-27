@@ -5,10 +5,17 @@ import _1_glpk
 import _2
 import _3_local_search
 import _3_milp
+import _4_1_enhanced
+import _4_1_lin_prog
+import _4_1_milp
+import _4_3_milp 
 from combine_data import get_data
 import pandas as pd
 import time
 from datetime import datetime
+import sys
+
+
 # TODO le date vanno cambiate con queste. Ma se metto queste nilm si incazza
 dates = ["2017-03-21", "2017-06-21", "2017-09-22", "2017-12-22"]
 
@@ -194,3 +201,32 @@ def run_models_3(policies, days=7, dates = ["2018-01-01", "2018-01-01", "2018-01
 
     print(f"\noutput_file_saved '{output_file}'")
     return number_of_cost_M_N_per_policy
+
+
+def run_models_4(number_of_M_N_per_policy, days=1, date= "2018-01-01" ):
+
+    for policy, (M, N) in number_of_M_N_per_policy.items():
+
+        original_stdout = sys.stdout
+        with open(f"results_{policy}.txt", "w") as f:
+            
+            sys.stdout = f  
+            print_policy = f"\n-----------------------------------{policy}-----------------------------------\n"
+            print(print_policy)
+
+            day = pd.to_datetime(date)
+            data = get_data(number_of_days=days, day=day)
+
+            if policy == '_4_1_enhanced':
+                _4_1_enhanced.solve(M, N, data=data)
+            elif policy == '_4_1_lin_prog':
+                _4_1_lin_prog.solve(M, N, data=data)
+            elif policy == '_4_1_milp':
+                _4_1_milp.solve(M, N, data=data)
+            elif policy == '_4_3_milp':
+                _4_3_milp.solve(M, N, data=data)
+            else:
+                warning = f"Policy '{policy}' not correct.\n"
+                print(warning)
+
+        sys.stdout = original_stdout

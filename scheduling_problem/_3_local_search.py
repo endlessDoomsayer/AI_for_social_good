@@ -226,8 +226,8 @@ class LocalSearchSolver:
         else:
             # If initial solution fails, try with even higher values
             print("Initial solution failed, trying with higher values...")
-            initial_M = 1800
-            initial_N = 2
+            initial_M = 4000
+            initial_N = 50
             model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
             obj_value, result = self.solve_with_timeout(model, timeout=180)
             
@@ -401,7 +401,6 @@ class LocalSearchSolver:
 
 # Usage example
 def solve(number_of_days=7, tot_number_of_days=5803):
-    
     solver = LocalSearchSolver(number_of_days=number_of_days, tot_number_of_days=tot_number_of_days)
     
     # Run local search

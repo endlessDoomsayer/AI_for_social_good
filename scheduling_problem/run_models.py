@@ -148,7 +148,7 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
 
             start = time.time()
             if policy == '_3_local_search':
-                cost, M, N = _3_local_search.solve(tot_number_of_days = tot_number_of_days,)
+                cost, M, N = _3_local_search.solve(tot_number_of_days = tot_number_of_days)
                 if M is None or N is None:
                     warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
                     print(warning)

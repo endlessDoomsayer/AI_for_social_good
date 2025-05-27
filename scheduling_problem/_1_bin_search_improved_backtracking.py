@@ -38,11 +38,8 @@ def binary_search_M(max_M, max_N, is_feasible):
 
     return best_MN
 
-def solve():
+def solve(biggestM = 5000, biggestN = 1000):
     # Define the search bounds for M and N
-
-    biggestM = 10000
-    biggestN = 10000
 
     data = get_data()
     
@@ -60,5 +57,4 @@ def solve():
         print("No feasible (M, N) found in given bounds.")
     print_solution(result[0],result[1],data)
     
-if __name__ == "__main__":
-    solve()
+    return result[0],result[1]

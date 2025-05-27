@@ -260,6 +260,8 @@ def solve():
         plt.savefig('schedule_visualization_1_glpk.svg', format="svg")
         print("\nSchedule visualization saved as 'schedule_visualization_1_glpk.svg'")
         
-        plt.show()
+        return pyo.value(model.M),pyo.value(model.N)
+        
+        #plt.show()
     else:
         print("Failed to find an optimal solution.")

@@ -1264,9 +1264,9 @@ def solve_with_all_techniques(M_val, N_val, data):
             }
 
             if success:
-                print(f"✅ SUCCESS! {name} found a solution in {end_time - start_time:.2f} seconds")
+                print(f"{name} found a solution in {end_time - start_time:.2f} seconds")
             else:
-                print(f"❌ FAILED: {name} could not find a solution ({end_time - start_time:.2f} seconds)")
+                print(f"{name} could not find a solution ({end_time - start_time:.2f} seconds)")
 
         except Exception as e:
             results[name] = {
@@ -1274,7 +1274,7 @@ def solve_with_all_techniques(M_val, N_val, data):
                 'error': str(e),
                 'time': 0
             }
-            print(f"💥 ERROR in {name}: {e}")
+            print(f"ERROR in {name}: {e}")
 
     # Summary
     print(f"\n{'=' * 60}")
@@ -1284,11 +1284,11 @@ def solve_with_all_techniques(M_val, N_val, data):
     successful_techniques = [name for name, result in results.items() if result['success']]
 
     if successful_techniques:
-        print("✅ Successful techniques:")
+        print("Successful techniques:")
         for name in successful_techniques:
             print(f"   - {name} ({results[name]['time']:.2f}s)")
     else:
-        print("❌ No technique found a feasible solution")
+        print("No technique found a feasible solution")
 
     print(f"\n{'=' * 60}")
 
@@ -1296,9 +1296,8 @@ def solve_with_all_techniques(M_val, N_val, data):
 
 
 # Example usage and testing
-def solve(M,N):
-    # Example data structure (you'll need to provide the actual data)
-    sample_data = combine_data.get_data()
+def solve(M, N, sample_data = combine_data.get_data()):
+    
     # Test with sample data
     print("Testing enhanced CSP solver with sample data...")
     solve_with_all_techniques(M, N, sample_data)

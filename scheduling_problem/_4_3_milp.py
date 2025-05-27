@@ -4,7 +4,7 @@ from combine_data import get_data
 import time 
 
 # Output of phase 3
-def solve(M,N):
+def solve(M, N, data = get_data()):
 
     BIG_M = 1000000
 
@@ -12,8 +12,7 @@ def solve(M,N):
     # Create a concrete model
     model = pyo.ConcreteModel()
 
-    # Get data
-    data = get_data()
+
 
     I = data["I"]
     J = data["J"]

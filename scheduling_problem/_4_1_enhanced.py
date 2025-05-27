@@ -886,7 +886,7 @@ def print_solution_enhanced(M_val, N_val, data):
         plt.tight_layout()
         plt.savefig('enhanced_schedule_visualization.svg', format="svg")
         print("\nEnhanced schedule visualization saved as 'enhanced_schedule_visualization.svg'")
-        plt.show()
+        #plt.show()
     else:
         print("Could not extract detailed solution for visualization.")
 

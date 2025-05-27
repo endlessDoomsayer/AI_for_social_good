@@ -4,13 +4,9 @@ from combine_data import get_data
 import time
 
 
-def solve():
+def solve(data = get_data()):
     # Create a concrete model
     model = pyo.ConcreteModel()
-
-
-    # Get data
-    data = get_data()
 
     I = data["I"]
     J = data["J"]

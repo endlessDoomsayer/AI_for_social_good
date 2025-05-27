@@ -320,3 +320,5 @@ def solve(max_time = 5000):
         #plt.show()
     else:
         print("Failed to find an optimal solution.")
+
+    return pyo.value(model.objective), pyo.value(model.N), pyo.value(model.N)

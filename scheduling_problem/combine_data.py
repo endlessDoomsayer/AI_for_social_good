@@ -106,7 +106,7 @@ def get_data(number_of_days = 7, day = pd.Timestamp("2018-01-01")):
     # Cost parameters
     # https://www.mosaikosrl.net/batterie-accumulo-fotovoltaico/
     B = 5000 # B: battery capacity  
-    c_b = 2.530 # Cost per battery
+    c_b = 2530 # Cost per battery
     # https://www.ecodirect.com/Canadian-Solar-CS6X-300P-300W-36V-PV-Panel-p/canadian-solar-cs6x-300p.htm?srsltid=AfmBOor_kd4mknwa-Am9K9m7VYG55_jnXMM3QTP7aTw2Y2qCChJ9GuL7
     c_p = 290   # Cost per unit of power: Canadian Solar CS6X-300P (inverter SMA_America_SB7000TL_US240V cost neglected)
     # TODO: ogni 25 pannelli solari c'è un inverter

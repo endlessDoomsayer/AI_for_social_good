@@ -68,7 +68,7 @@ def solve(max_time = 5000):
 
     # Objective: Minimize battery and power costs plus deficit
     def objective_rule(m):
-        return m.N * c_b + m.M * c_p + c_e*sum(m.z[t] for t in m.T)
+        return m.N * c_b + m.M * c_p + 829*c_e*sum(m.z[t] for t in m.T) #todo: put inverter and number of days
     model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 

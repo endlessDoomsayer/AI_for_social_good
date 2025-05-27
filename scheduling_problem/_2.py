@@ -6,7 +6,8 @@ def print_sol(M,N):
     print("N:", N)
 
     # Get data
-    data = get_data()
+    number_of_days = 7
+    data = get_data(7)
 
     I = data["I"]
     J = data["J"]
@@ -24,7 +25,7 @@ def print_sol(M,N):
 
     total_cost_panels = N*c_b + M*c_p
 
-    total_energy = sum(e[i]*d[i]*n_jobs[i]+f[i]*n_jobs[i] for i in I)
+    total_energy = sum(e[i]*d[i]*n_jobs[i]+f[i]*n_jobs[i] for i in I)/number_of_days
 
     total_cost = (c_e*total_energy)
 
@@ -32,7 +33,10 @@ def print_sol(M,N):
     # i need to buy 2 an inverter every 24 panels 
     total_inverter = M/24
 
-    total_cost += total_inverter * 1200  # i dont found the correct price
+    total_cost_panels += total_inverter * 3000  # i dont found the correct price
+    
+    print("Total cost if we buy panels:", total_cost_panels)
+    print("Total cost if we don't buy panels:", total_cost)
 
     # Total days we could go on without panels
     days = total_cost_panels/total_cost

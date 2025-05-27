@@ -118,7 +118,7 @@ def run_step_2(number_of_M_N, policies):
             M, N = number_of_M_N[policy]
             days, years = _2.print_sol(M, N)
 
-            result = f"Results for {policy}: Days={days}, year={year}\n"
+            result = f"Results for {policy}: Days={days}, year={years}\n"
             print(result)
             f.write(result)
 
@@ -157,7 +157,7 @@ def run_models_3(policies, days=7, dates = ["2018-01-01", "2018-01-01", "2018-01
 
                 start = time.time()
                 if policy == '_3_local_search':
-                    cost, M, N = _3_local_search.solve(data=data)
+                    cost, M, N = _3_local_search.solve(data=data, number_of_days=days, tot_number_of_days=tot_days)
                     if cost or M or N is None:
                         warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
                         print(warning)

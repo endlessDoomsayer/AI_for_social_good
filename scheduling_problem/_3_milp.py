@@ -6,7 +6,7 @@ from combine_data import get_data
 
 import time
 
-def solve(max_time = 5000):
+def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5803):
     # Create a concrete model
     model = pyo.ConcreteModel()
 
@@ -68,7 +68,7 @@ def solve(max_time = 5000):
 
     # Objective: Minimize battery and power costs plus deficit
     def objective_rule(m):
-        return m.N * c_b + m.M * c_p + 829*c_e*sum(m.z[t] for t in m.T) #todo: put inverter and number of days
+        return m.N * c_b + m.M * c_p + (tot_number_of_days/number_of_days)*c_e*sum(m.z[t] for t in m.T) #todo: put inverter and number of days
     model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 

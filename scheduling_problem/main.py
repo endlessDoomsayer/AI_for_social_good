@@ -9,6 +9,7 @@ import _4_1_milp
 import _4_1_enhanced
 import _4_1_lin_prog
 import _4_3_milp
+import run_models
 
 
 print("-----------------------------------\nModel 1\n-----------------------------------")
@@ -33,5 +34,3 @@ print(f"Time taken for GLPK: {end - start}")
 print("-----------------------------------\nModel 2\n-----------------------------------")
 
 _2.print_sol(M,N)
-
-

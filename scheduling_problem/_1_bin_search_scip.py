@@ -36,12 +36,9 @@ def binary_search_M(max_M, max_N, data, is_feasible):
 
     return best_MN
 
-def solve(biggestM = 5000, biggestN = 1000):
+def solve(biggestM = 5000, biggestN = 1000, data = get_data()):
     # Define the search bounds for M and N
-    
-    data = get_data()
-    
-    
+  
     start = time.time()
     result = binary_search_M(biggestM, biggestN, data, find_min)
     end = time.time()

@@ -409,3 +409,4 @@ def solve():
     
     # Visualize results
     solver.visualize_results(best_model, improvements)
+    return best_obj, best_M, best_N

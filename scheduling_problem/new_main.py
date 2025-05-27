@@ -9,7 +9,7 @@ import _4_1_milp
 import _4_1_enhanced
 import _4_1_lin_prog
 import _4_3_milp
-import scheduling_problem.run_models as run_models
+import run_models
 
 #MODEL_1_POLICIES = [ '_1_bin_search_improved_backtracking', '_1_bin_search_scip', '_1_glpk')
 MODEL_1_POLICIES = [ '_1_bin_search_scip']

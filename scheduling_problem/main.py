@@ -9,7 +9,7 @@ import _4_1_milp
 import _4_1_enhanced
 import _4_1_lin_prog
 import _4_3_milp
-import run_models
+import scheduling_problem.run_models_dates as run_models_dates
 
 
 print("-----------------------------------\nModel 1\n-----------------------------------")

@@ -7,11 +7,9 @@ from combine_data import get_data
 import _3_milp
 
 class LocalSearchSolver:
-
-    def __init__(self, number_of_days=7, tot_number_of_days=5803 ):
-        self.tot_number_of_days = tot_number_of_days
-        self.number_of_days = number_of_days
-        self.data = get_data(number_of_days)  # o get_data() se non prende parametri
+    def __init__(self):
+        # Get data
+        self.data = get_data()
         self.setup_data()
         
     def setup_data(self):
@@ -86,7 +84,7 @@ class LocalSearchSolver:
         """Add all the constraints to the model"""
         # Objective
         def objective_rule(m):
-            return m.N * self.c_b + m.M * self.c_p + (self.tot_number_of_days / self.number_of_days) * self.c_e * sum(m.z[t] for t in m.T)
+            return m.N * self.c_b + m.M * self.c_p + self.c_e * sum(m.z[t] for t in m.T)
         model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
         # Energy balance constraint
@@ -400,9 +398,8 @@ class LocalSearchSolver:
 
 
 # Usage example
-def solve(number_of_days=7, tot_number_of_days=5803):
-    
-    solver = LocalSearchSolver(number_of_days=number_of_days, tot_number_of_days=tot_number_of_days)
+def solve():
+    solver = LocalSearchSolver()
     
     # Run local search
     best_M, best_N, best_obj, best_model, improvements = solver.local_search(

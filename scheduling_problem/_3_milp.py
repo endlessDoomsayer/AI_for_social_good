@@ -6,14 +6,11 @@ from combine_data import get_data
 
 import time
 
-def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5803):
+def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5803, data = get_data(7)):
+    
     # Create a concrete model
     model = pyo.ConcreteModel()
-
     BIG_M = 1000000
-
-    # Get data
-    data = get_data()
 
     # Round to 3 decimal places
     def float_to_round(float_list):

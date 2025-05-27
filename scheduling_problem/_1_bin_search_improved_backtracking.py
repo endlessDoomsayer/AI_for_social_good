@@ -39,10 +39,7 @@ def binary_search_M(max_M, max_N, is_feasible):
     return best_MN
 
 def solve(biggestM = 5000, biggestN = 1000, data = get_data()):
-    # Define the search bounds for M and N
-
-    
-    
+ 
     solver = CSPSolver(data)
 
     start = time.time()

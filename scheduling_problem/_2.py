@@ -1,13 +1,9 @@
 from combine_data import get_data
 
 
-def print_sol(M,N):
+def print_sol(M,N, number_of_days = 7, data = get_data()):
     print("M:", M)
     print("N:", N)
-
-    # Get data
-    number_of_days = 7
-    data = get_data(7)
 
     I = data["I"]
     J = data["J"]

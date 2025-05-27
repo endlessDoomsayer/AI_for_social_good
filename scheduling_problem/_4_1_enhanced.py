@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import random
 import math
 from collections import defaultdict
-import combine_data
+from combine_data import get_data
 import time
 
 
@@ -1296,9 +1296,9 @@ def solve_with_all_techniques(M_val, N_val, data):
 
 
 # Example usage and testing
-def solve(M, N, sample_data = combine_data.get_data()):
+def solve(M, N, data = get_data()):
     
     # Test with sample data
     print("Testing enhanced CSP solver with sample data...")
-    solve_with_all_techniques(M, N, sample_data)
+    solve_with_all_techniques(M, N, data)
 

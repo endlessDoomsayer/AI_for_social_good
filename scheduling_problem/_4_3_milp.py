@@ -8,11 +8,8 @@ def solve(M, N, data = get_data()):
 
     BIG_M = 1000000
 
-
     # Create a concrete model
     model = pyo.ConcreteModel()
-
-
 
     I = data["I"]
     J = data["J"]

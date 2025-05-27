@@ -12,23 +12,29 @@ import _4_3_milp
 
 
 print("-----------------------------------\nModel 1\n-----------------------------------")
-start = time.time()
-_1_bin_search_improved_backtracking.solve()
-end = time.time()
-
-print(f"Time taken for binary search with improved backtracking: {end - start}")
-
-start = time.time()
-_1_bin_search_scip.solve()
-end = time.time()
-
-print(f"Time taken for binary search with SCIP: {end - start}")
-
+""" 
 start = time.time()
 M,N = _1_glpk.solve()
 end = time.time()
 
 print(f"Time taken for GLPK: {end - start}")
+
+start = time.time()
+_1_bin_search_scip.solve(10000, 10000)
+end = time.time()
+
+print(f"Time taken for binary search with SCIP: {end - start}")
+
+start = time.time()
+_1_bin_search_improved_backtracking.solve(10000, 10000)
+end = time.time()
+
+print(f"Time taken for binary search with improved backtracking: {end - start}")
+
+"""
+
+M = 4912
+N = 45
 
 print("-----------------------------------\nModel 2\n-----------------------------------")
 

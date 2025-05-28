@@ -13,8 +13,6 @@ def find_min(M, N, data):
     d = data["d"]
     e = data["e"]
     f = data["f"]
-    c_b = data["c_b"]
-    c_p = data["c_p"]
     c = data["c"]
     p = data["p"]
     mmm = data["mmm"]
@@ -487,14 +485,13 @@ def print_solution(M,N,data,filename):
             for j in J:
                 if j <= n_jobs[i]:
                     legend_jobs.add(j)
-        ax1.legend([f'Job {j}' for j in sorted(legend_jobs)], loc='upper right')
+        #ax1.legend([f'Job {j}' for j in sorted(legend_jobs)], loc='upper right')
 
         print("\nStorage Levels:")
         for t in T:
             storage_val = s[t].solution_value()
             storage_values.append(storage_val)
-            if t <= 10:  # Show first 10 time periods for brevity
-                print(f"  t={t}: {storage_val:.2f}")
+            print(f"  t={t}: {storage_val:.2f}")
 
         ax2.plot(T, storage_values, marker='o', linestyle='-', markersize=4)
         battery_capacity = N * B
@@ -531,4 +528,4 @@ def solve(M, N, data = combine_data.get_data()):
     print_solution(M,N,data,"4_1_lin_prog")
 
 if __name__ == "__main__":
-    solve(4920, 40)
+    solve(4912, 45)

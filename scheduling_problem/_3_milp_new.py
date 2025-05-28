@@ -9,7 +9,7 @@ def solve(max_time = 700, number_of_days = 7, tot_number_of_days = 5803, data = 
     
     # Create a concrete model
     model = pyo.ConcreteModel()
-    BIG_M = 1000000
+    BIG_M = 999999
 
     # Round to 3 decimal places
     def float_to_round(float_list):
@@ -25,7 +25,7 @@ def solve(max_time = 700, number_of_days = 7, tot_number_of_days = 5803, data = 
     c_b = data["c_b"]
     c_p = data["c_p"]
     c_e = data["c_e"]
-    c_e *= (tot_number_of_days/number_of_days)
+    #c_e *= (tot_number_of_days/number_of_days)
     c = data["c"]
     p = float_to_round(data["p"])
     mmm = data["mmm"]

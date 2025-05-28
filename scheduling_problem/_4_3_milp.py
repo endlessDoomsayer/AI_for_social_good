@@ -18,8 +18,6 @@ def solve(M, N, data = get_data(number_of_days=7)):
     d = data["d"]
     e = data["e"]
     f = data["f"]
-    c_b = data["c_b"]
-    c_p = data["c_p"]
     c = data["c"]
     p = data["p"]
     mmm = data["mmm"]
@@ -57,7 +55,7 @@ def solve(M, N, data = get_data(number_of_days=7)):
 
     # Objective: Minimize battery and power costs plus deficit
     def objective_rule(m):
-        return sum(m.z[t] for t in m.T)
+        return sum(0*m.z[t] for t in m.T)
     model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 
@@ -309,4 +307,4 @@ def solve(M, N, data = get_data(number_of_days=7)):
         print("Failed to find an optimal solution.")
 
 if __name__ == "__main__":
-    solve(100000, 50000)
+    solve(4912, 45)

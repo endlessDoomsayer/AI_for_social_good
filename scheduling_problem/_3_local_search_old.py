@@ -28,7 +28,7 @@ class LocalSearchSolver:
         self.c_b = self.data["c_b"]
         self.c_p = self.data["c_p"]
         self.c_e = self.data["c_e"]
-        self.c_e *= 5791/7
+        self.c_e *= 5791/7 # TODO: taken from outside
         self.c = self.data["c"]
         self.p = float_to_round(self.data["p"])
         self.mmm = self.data["mmm"]
@@ -224,8 +224,8 @@ class LocalSearchSolver:
         else:
             # If initial solution fails, try with even higher values
             print("Initial solution failed, trying with higher values...")
-            initial_M = 12442
-            initial_N = 43
+            initial_M = 4192
+            initial_N = 45
             model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
             obj_value, result = self.solve_with_timeout(model, timeout=180)
             
@@ -235,7 +235,7 @@ class LocalSearchSolver:
             else:
                 raise Exception("Could not find initial feasible solution")
 
-    def local_search(self, max_iterations=50, timeout_per_solve=30):
+    def local_search(self, max_iterations=100, timeout_per_solve=30):
         """Main local search algorithm"""
         print("Starting Local Search Optimization...")
         start_time = time.time()

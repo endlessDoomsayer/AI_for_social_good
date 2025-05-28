@@ -1302,3 +1302,5 @@ def solve(M, N, data = get_data()):
     print("Testing enhanced CSP solver with sample data...")
     solve_with_all_techniques(M, N, data)
 
+if __name__ == "__main__":
+    solve(4912, 45)

@@ -1,15 +1,19 @@
 import pyomo.environ as pyo
+import random
 import matplotlib.pyplot as plt
 
 from combine_data import get_data
 
 import time
 
-def solve(max_time = 700, number_of_days = 7, tot_number_of_days = 5803, data = get_data()):
-    
+def solve(max_time = 5000):
     # Create a concrete model
     model = pyo.ConcreteModel()
-    BIG_M = 999999
+
+    BIG_M = 1000000
+
+    # Get data
+    data = get_data()
 
     # Round to 3 decimal places
     def float_to_round(float_list):
@@ -25,7 +29,6 @@ def solve(max_time = 700, number_of_days = 7, tot_number_of_days = 5803, data = 
     c_b = data["c_b"]
     c_p = data["c_p"]
     c_e = data["c_e"]
-    #c_e *= (tot_number_of_days/number_of_days)
     c = data["c"]
     p = float_to_round(data["p"])
     mmm = data["mmm"]
@@ -65,7 +68,7 @@ def solve(max_time = 700, number_of_days = 7, tot_number_of_days = 5803, data = 
 
     # Objective: Minimize battery and power costs plus deficit
     def objective_rule(m):
-        return m.N * c_b + m.M * c_p #+ c_e*sum(m.z[t] for t in m.T) #TODO: put inverter and number of days
+        return m.N * c_b + m.M * c_p + c_e*sum(m.z[t] for t in m.T)
     model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 
@@ -79,16 +82,9 @@ def solve(max_time = 700, number_of_days = 7, tot_number_of_days = 5803, data = 
 
     # 2. Volume calculation constraint
     def volume_rule(m, t):
-        if t == 1:
-            return m.V[t] == 0
-        else:
-            return m.V[t] == sum(m.M * p[tp] - sum(e[i] * m.x[i, tp, j] + f[i] * m.y[i, tp, j] for i in m.I for j in m.J)
-                                for tp in range(1, t))
+        return m.V[t] == sum(m.M * p[tp] - sum(e[i] * m.x[i, tp, j] + f[i] * m.y[i, tp, j] for i in m.I for j in m.J)
+                            for tp in range(1, t))
     model.volume_constraint = pyo.Constraint(model.T, rule=volume_rule)
-    
-    def storage_init_rule(m):
-        return m.s[1] == 0
-    model.storage_init = pyo.Constraint(rule=storage_init_rule)
 
 
     # 3. Constraints for binary variable b_t based on V_t sign
@@ -319,14 +315,11 @@ def solve(max_time = 700, number_of_days = 7, tot_number_of_days = 5803, data = 
         plt.savefig('schedule_visualization_model_3_glpk.svg', format="svg")
         print("\nSchedule visualization saved as 'schedule_visualization.svg'")
         
-        return (pyo.value(model.M),pyo.value(model.N))
+        return (pyo.value(model.M),pyo.value(model.N), pyo.value(model.objective))
 
         #plt.show()
     else:
         print("Failed to find an optimal solution.")
-
-    return pyo.value(model.objective), pyo.value(model.N), pyo.value(model.N)
-
-
+        
 if __name__ == "__main__":
     solve()

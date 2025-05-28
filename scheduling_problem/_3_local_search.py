@@ -396,7 +396,7 @@ class LocalSearchSolver:
         plt.tight_layout()
         plt.savefig('local_search_results_combined.svg', format="svg", dpi=300, bbox_inches='tight')
         #print("Results visualization saved as 'local_search_results.png'")
-        plt.show()
+        #plt.show()
 
 
 # Usage example

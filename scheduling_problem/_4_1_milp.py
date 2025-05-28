@@ -268,6 +268,6 @@ def solve(M, N, data = get_data()):
         plt.savefig('schedule_visualization.svg', format="svg")
         print("\nSchedule visualization saved as 'schedule_visualization.svg'")
 
-        plt.show()
+        #plt.show()
     else:
         print("Failed to find an optimal solution.")

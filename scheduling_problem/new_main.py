@@ -27,10 +27,12 @@ for policy, (M, N) in number_of_M_N_per_policy.items():
 
 
 # Run step 2
-step_2_days, step_2_years = run_models.run_step_2(number_of_M_N_per_policy, MODEL_1_POLICIES)
+number_of_days_years_per_policy = run_models.run_step_2(number_of_M_N_per_policy, MODEL_1_POLICIES)
 
+step_2_days = 999999999
+for policy, (days, years) in number_of_days_years_per_policy.items():
+    step_2_days = min(step_2_days, days)  
 
-# Run Model 3
 number_of_cost_M_N_per_policy = run_models.run_models_3(MODEL_3_POLICIES, tot_number_of_days = step_2_days)
 model_3_cost, model_3_M, model_3_N = 999999999, 999999999, 999999999
 for policy, (cost, M, N) in number_of_cost_M_N_per_policy.items():

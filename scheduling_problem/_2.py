@@ -40,3 +40,6 @@ def print_sol(M,N, number_of_days = 7, data = get_data()):
     print("Years if we don't buy panels:", days/365)
 
     return days, days/365
+
+if __name__ == "__main__":
+    print_sol(4912,45)

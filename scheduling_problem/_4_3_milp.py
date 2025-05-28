@@ -307,3 +307,6 @@ def solve(M, N, data = get_data()):
         #plt.show()
     else:
         print("Failed to find an optimal solution.")
+
+if __name__ == "__main__":
+    solve(10000, 5000)

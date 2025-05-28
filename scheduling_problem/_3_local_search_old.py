@@ -28,6 +28,7 @@ class LocalSearchSolver:
         self.c_b = self.data["c_b"]
         self.c_p = self.data["c_p"]
         self.c_e = self.data["c_e"]
+        self.c_e *= 5791/7
         self.c = self.data["c"]
         self.p = float_to_round(self.data["p"])
         self.mmm = self.data["mmm"]

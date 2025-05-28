@@ -6,7 +6,7 @@ from combine_data import get_data
 
 import time
 
-def solve(max_time = 5000):
+def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5792):
     # Create a concrete model
     model = pyo.ConcreteModel()
 
@@ -29,6 +29,7 @@ def solve(max_time = 5000):
     c_b = data["c_b"]
     c_p = data["c_p"]
     c_e = data["c_e"]
+    c_e *= (tot_number_of_days/number_of_days)
     c = data["c"]
     p = float_to_round(data["p"])
     mmm = data["mmm"]

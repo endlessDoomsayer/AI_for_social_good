@@ -4,7 +4,7 @@ from combine_data import get_data
 import time 
 
 # Output of phase 3
-def solve(M, N, data = get_data()):
+def solve(M, N, data = get_data(number_of_days=7)):
 
     BIG_M = 1000000
 
@@ -309,4 +309,4 @@ def solve(M, N, data = get_data()):
         print("Failed to find an optimal solution.")
 
 if __name__ == "__main__":
-    solve(10000, 5000)
+    solve(100000, 50000)

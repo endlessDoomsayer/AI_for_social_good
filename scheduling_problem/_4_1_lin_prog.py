@@ -212,9 +212,10 @@ def find_min(M, N, data):
                         x[i, t, j].SetBounds(0, 0)  # Fix to 0
 
     # Set solver parameters
-    solver.SetTimeLimit(300000)  # 5 minutes timeout
+    solver.SetTimeLimit(3000000)  # 5 minutes timeout
 
     # Solve
+    #print("LinProg solver started...")
     status = solver.Solve()
 
     status_dict = {
@@ -225,6 +226,8 @@ def find_min(M, N, data):
         pywraplp.Solver.ABNORMAL: "ABNORMAL",
         pywraplp.Solver.NOT_SOLVED: "NOT_SOLVED"
     }
+    
+    print(f"Status: {status_dict[status]}")
 
     if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
         return True
@@ -525,3 +528,7 @@ def print_solution(M,N,data,filename):
         
 def solve(M, N, data = combine_data.get_data()):
     find_min(M,N,data)
+    print_solution(M,N,data,"4_1_lin_prog")
+
+if __name__ == "__main__":
+    solve(4907, 500)

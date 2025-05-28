@@ -1,12 +1,11 @@
 import pyomo.environ as pyo
-import random
 import matplotlib.pyplot as plt
 
 from combine_data import get_data
 
 import time
 
-def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5803, data = get_data(7)):
+def solve(max_time = 100000, number_of_days = 1, tot_number_of_days = 5803, data = get_data(7)):
     
     # Create a concrete model
     model = pyo.ConcreteModel()
@@ -26,6 +25,7 @@ def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5803, data =
     c_b = data["c_b"]
     c_p = data["c_p"]
     c_e = data["c_e"]
+    c_e *= (tot_number_of_days/number_of_days)
     c = data["c"]
     p = float_to_round(data["p"])
     mmm = data["mmm"]
@@ -65,7 +65,7 @@ def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5803, data =
 
     # Objective: Minimize battery and power costs plus deficit
     def objective_rule(m):
-        return m.N * c_b + m.M * c_p + (tot_number_of_days/number_of_days)*c_e*sum(m.z[t] for t in m.T) #todo: put inverter and number of days
+        return m.N * c_b + m.M * c_p + c_e*sum(m.z[t] for t in m.T) #todo: put inverter and number of days
     model.objective = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
 
@@ -230,7 +230,7 @@ def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5803, data =
     # Solve the model
     solver = pyo.SolverFactory('glpk')
     print("Solving the model...")
-    solver.options['tmlim'] = max_time
+    #solver.options['tmlim'] = max_time
     
     start = time.time()
     result = solver.solve(model, tee=True)  # tee=True shows the solver output
@@ -319,3 +319,7 @@ def solve(max_time = 5000, number_of_days = 7, tot_number_of_days = 5803, data =
         print("Failed to find an optimal solution.")
 
     return pyo.value(model.objective), pyo.value(model.N), pyo.value(model.N)
+
+
+if __name__ == "__main__":
+    solve()

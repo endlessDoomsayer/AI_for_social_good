@@ -214,7 +214,7 @@ class LocalSearchSolver:
         """Get initial solution with high M and N values"""
         print("Finding initial solution...")
         
-        (initial_M, initial_N, obj_value) = _3_milp_old.solve(100)
+        (initial_M, initial_N, obj_value) = _3_milp_old.solve(1000)
         
         model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
         

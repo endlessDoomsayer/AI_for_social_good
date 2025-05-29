@@ -8,7 +8,7 @@ from nilm.dataset_functions import Dataset, plot_data
 from weather_pv_conversion.solar_production import SolarProductionPredictor 
 
 
-def get_data(number_of_days = 7, day = pd.Timestamp("2018-01-01")):
+def get_data(number_of_days = 2, day = pd.Timestamp("2018-01-02")):
     
     end_date = day+pd.to_timedelta(number_of_days-1, unit='D')
     
@@ -140,7 +140,7 @@ def get_data(number_of_days = 7, day = pd.Timestamp("2018-01-01")):
     data["c"] = c
     
     # THRESHOLD_FOR_JOB_J
-    THRESHOLD_FOR_JOB_J_AND_I = {(i,j): 24*(j+1) for i in I for j in J} # Time limit for each job TODO
+    THRESHOLD_FOR_JOB_J_AND_I = {(i,j): 24*(j) for i in I for j in J} # Time limit for each job TODO
     data["THRESHOLD_FOR_JOB_J_AND_I"] = THRESHOLD_FOR_JOB_J_AND_I
 
 
@@ -167,6 +167,7 @@ def get_data(number_of_days = 7, day = pd.Timestamp("2018-01-01")):
     print(f"Machine dependencies: {M_dependencies}")
     print(f"Shared resource groups: {M_shared}")
     print(f"Silent periods: {silent_periods}")
+    print(f"Time limit for each job (THRESHOLD_FOR_JOB_J_AND_I): {THRESHOLD_FOR_JOB_J_AND_I}")
     print("--------------------------------------\n")
 
     return data

@@ -29,7 +29,7 @@ def solve(max_time = 5000, number_of_days = 1, tot_number_of_days = 5792):
     c_b = data["c_b"]
     c_p = data["c_p"]
     c_e = data["c_e"]
-    c_e *= (tot_number_of_days)#/number_of_days)
+    c_e *= (tot_number_of_days)/2#/number_of_days)
     c = data["c"]
     p = float_to_round(data["p"])
     mmm = data["mmm"]
@@ -137,66 +137,10 @@ def solve(max_time = 5000, number_of_days = 1, tot_number_of_days = 5792):
     model.single_start_time = pyo.Constraint(model.I, model.T, rule=one_start_at_time)
 
 
-    # 9. Max energy constraint
-    def max_energy(m, t):
-        return sum(e[i] * m.x[i, t, j] for i in m.I for j in m.J) <= mmm[t]
-    model.max_energy = pyo.Constraint(model.T, rule=max_energy)
-
-    # 10. Silent periods for machines
-    model.silent_periods = pyo.ConstraintList()
-    for i, times in silent_periods.items():
-        for t in times:
-            if t <= T_MAX:  # Make sure the time is within our horizon
-                model.silent_periods.add(sum(model.x[i, t, j] for j in J) == 0)
-
-    # 11. Shared resource constraint
-    model.shared_resources = pyo.ConstraintList()
-    for t in T:
-        for group in M_shared:
-            machines_in_group = [i for i in group if i in I]  # Ensure the machines are in our defined set
-            if machines_in_group:
-                model.shared_resources.add(
-                    sum(model.x[i, t, j] for i in machines_in_group for j in J) <= 1
-                )
-
-
-    # 12. Start implies run and continuity constraint
-    def run_start_relation(m, i, t, j):
-        if t == 1:
-            # First time period: x[i,t,j] = y[i,t,j]
-            return m.x[i, t, j] == m.y[i, t, j]
-        else:
-            # For subsequent periods: x[i,t,j] <= y[i,t,j] + x[i,t-1,j]
-            return m.x[i, t, j] <= m.y[i, t, j] + m.x[i, t - 1, j]
-    model.run_start_relation = pyo.Constraint(model.I, model.T, model.J, rule=run_start_relation)
-
-
     # 13. When you start a job, you must run it
     def start_implies_run(m, i, t, j):
         return m.y[i, t, j] <= m.x[i, t, j]
     model.start_implies_run = pyo.Constraint(model.I, model.T, model.J, rule=start_implies_run)
-
-    # 14. Dependency constraint
-    model.dependencies = pyo.ConstraintList()
-    for (k, kp1) in M_dependencies:
-        if k in I and kp1 in I:  # Ensure both machines are in our defined set
-            for t in T:
-                for j in J:
-                    if t == 1:
-                        model.dependencies.add(model.y[kp1, t, j] == 0)  # Cannot start dependent job at first time period
-                    else:
-                        # Job on machine kp1 can start only if job on machine k was completed
-                        prev_completions = sum(model.x[k, tp, j] for tp in range(1, t))
-                        model.dependencies.add(model.y[kp1, t, j] <= prev_completions / d[k])
-
-    # 15. Cooldown constraint
-    model.cooldowns = pyo.ConstraintList()
-    for i in I:
-        for t in T:
-            if t > c[i]:  # Only apply for time periods after possible cooldown
-                cooldown_sum = sum(1 - sum(model.x[i, tp, jj] for jj in J) for tp in range(t - c[i], t))
-                for j in J:
-                    model.cooldowns.add(model.y[i, t, j] <= cooldown_sum / c[i])
 
     # 16. Job must be completed before threshold
     model.job_completion = pyo.ConstraintList()
@@ -211,25 +155,6 @@ def solve(max_time = 5000, number_of_days = 1, tot_number_of_days = 5792):
                 for t in range(THRESHOLD_FOR_JOB_J_AND_I[(i, j)] + 1, T_MAX + 1):
                     model.job_completion.add(model.x[i, t, j] == 0)
 
-    """
-    # 17. Job continuity constraint
-    # A job, once started, must run for consecutive time periods
-    model.job_continuity = pyo.ConstraintList()
-    for i in I:
-        for j in J:
-            if j <= n_jobs[i]:  # Only apply for required jobs
-                # Each job must have exactly one start
-                model.job_continuity.add(
-                    sum(model.y[i, t, j] for t in T) == 1
-                )
-
-                # Ensure continuous operation for the duration
-                for t in range(2, T_MAX + 1):
-                    # If the job is running at time t but not at t-1, then it must have started at t
-                    model.job_continuity.add(
-                        model.x[i, t, j] - model.x[i, t - 1, j] <= model.y[i, t, j]
-                    )
-    """
 
     # Solve the model
     solver = pyo.SolverFactory('glpk')

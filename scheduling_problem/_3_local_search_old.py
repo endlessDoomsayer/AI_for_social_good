@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import time
 import copy
 from combine_data import get_data
-import _3_milp_old
+import _3_milp_old_simplified
 
 class LocalSearchSolver:
     def __init__(self):
@@ -28,7 +28,7 @@ class LocalSearchSolver:
         self.c_b = self.data["c_b"]
         self.c_p = self.data["c_p"]
         self.c_e = self.data["c_e"]
-        self.c_e *= 5791/7 # TODO: taken from outside
+        self.c_e *= 5792/2 # TODO: taken from outside
         self.c = self.data["c"]
         self.p = float_to_round(self.data["p"])
         self.mmm = self.data["mmm"]
@@ -214,7 +214,7 @@ class LocalSearchSolver:
         """Get initial solution with high M and N values"""
         print("Finding initial solution...")
         
-        (initial_M, initial_N, obj_value) = _3_milp_old.solve(1000)
+        (initial_M, initial_N, obj_value) = _3_milp_old_simplified.solve(1000)
         
         model = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
         

@@ -123,29 +123,6 @@ def solve(M, N, data = get_data(number_of_days=7)):
     model.single_start_time = pyo.Constraint(model.I, model.T, rule=one_start_at_time)
 
 
-    # 9. Max energy constraint
-    def max_energy(m, t):
-        return sum(e[i] * m.x[i, t, j] for i in m.I for j in m.J) <= mmm[t]
-    model.max_energy = pyo.Constraint(model.T, rule=max_energy)
-
-    # 10. Silent periods for machines
-    model.silent_periods = pyo.ConstraintList()
-    for i, times in silent_periods.items():
-        for t in times:
-            if t <= T_MAX:  # Make sure the time is within our horizon
-                model.silent_periods.add(sum(model.x[i, t, j] for j in J) == 0)
-
-    # 11. Shared resource constraint
-    model.shared_resources = pyo.ConstraintList()
-    for t in T:
-        for group in M_shared:
-            machines_in_group = [i for i in group if i in I]  # Ensure the machines are in our defined set
-            if machines_in_group:
-                model.shared_resources.add(
-                    sum(model.x[i, t, j] for i in machines_in_group for j in J) <= 1
-                )
-
-
     # 12. Start implies run and continuity constraint
     def run_start_relation(m, i, t, j):
         if t == 1:
@@ -161,28 +138,6 @@ def solve(M, N, data = get_data(number_of_days=7)):
     def start_implies_run(m, i, t, j):
         return m.y[i, t, j] <= m.x[i, t, j]
     model.start_implies_run = pyo.Constraint(model.I, model.T, model.J, rule=start_implies_run)
-
-    # 14. Dependency constraint
-    model.dependencies = pyo.ConstraintList()
-    for (k, kp1) in M_dependencies:
-        if k in I and kp1 in I:  # Ensure both machines are in our defined set
-            for t in T:
-                for j in J:
-                    if t == 1:
-                        model.dependencies.add(model.y[kp1, t, j] == 0)  # Cannot start dependent job at first time period
-                    else:
-                        # Job on machine kp1 can start only if job on machine k was completed
-                        prev_completions = sum(model.x[k, tp, j] for tp in range(1, t))
-                        model.dependencies.add(model.y[kp1, t, j] <= prev_completions / d[k])
-
-    # 15. Cooldown constraint
-    model.cooldowns = pyo.ConstraintList()
-    for i in I:
-        for t in T:
-            if t > c[i]:  # Only apply for time periods after possible cooldown
-                cooldown_sum = sum(1 - sum(model.x[i, tp, jj] for jj in J) for tp in range(t - c[i], t))
-                for j in J:
-                    model.cooldowns.add(model.y[i, t, j] <= cooldown_sum / c[i])
 
     # 16. Job must be completed before threshold
     model.job_completion = pyo.ConstraintList()
@@ -307,4 +262,4 @@ def solve(M, N, data = get_data(number_of_days=7)):
         print("Failed to find an optimal solution.")
 
 if __name__ == "__main__":
-    solve(4912, 45)
+    solve(2243, 26)

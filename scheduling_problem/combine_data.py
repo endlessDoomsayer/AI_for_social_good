@@ -145,9 +145,9 @@ def get_data(number_of_days = 2, day = pd.Timestamp("2018-01-02")):
 
 
     # Sets of dependencies and shared resources
-    M_dependencies = [(1,3)]  # Pairs of machines where the second depends on the first
-    M_shared =[(3,4)]  # Groups of machines that share resources and cannot run simultaneously
-    silent_periods = {1:[25,26,27,28,29,30,31,32,33], 5:[32,33,34,35,36,37,38], 6:[24,25,26,27,28,29,30]}  # Periods when certain machines must be off
+    M_dependencies =[]# [(1,3)]  # Pairs of machines where the second depends on the first
+    M_shared =[]#[(3,4)]  # Groups of machines that share resources and cannot run simultaneously
+    silent_periods ={}# {1:[25,26,27,28,29,30,31,32,33], 5:[32,33,34,35,36,37,38], 6:[24,25,26,27,28,29,30]}  # Periods when certain machines must be off
     
     data["M_dependencies"] = M_dependencies
     data["M_shared"] = M_shared

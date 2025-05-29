@@ -6,7 +6,7 @@ from combine_data import get_data
 
 import time
 
-def solve(max_time = 5000, number_of_days = 1, tot_number_of_days = 5792):
+def solve(max_time = 720, number_of_days = 1, tot_number_of_days = 5792):
     # Create a concrete model
     model = pyo.ConcreteModel()
 
@@ -179,7 +179,7 @@ def solve(max_time = 5000, number_of_days = 1, tot_number_of_days = 5792):
 
         # Print deficit values
         print("\nDeficit Values (z_t):")
-        for t in range(1, min(11, T_MAX + 1)):  # Show first 10 time periods for brevity
+        for t in range(1, T_MAX + 1):  # Show first 10 time periods for brevity
             print(f"  t={t}: {pyo.value(model.z[t]):.2f}")
 
         # Print machine schedules
@@ -196,12 +196,12 @@ def solve(max_time = 5000, number_of_days = 1, tot_number_of_days = 5792):
         # Print energy storage levels
         storage_values = [pyo.value(model.s[t]) for t in T]
         print("\nStorage Levels:")
-        for t in range(1, min(11, T_MAX + 1)):  # Show first 10 time periods for brevity
+        for t in range(1, T_MAX + 1):  # Show first 10 time periods for brevity
             print(f"  t={t}: {pyo.value(model.s[t]):.2f}")
 
         # Print volume values
         print("\nVolume Values (V_t):")
-        for t in range(1, min(11, T_MAX + 1)):  # Show first 10 time periods for brevity
+        for t in range(1, T_MAX + 1):  # Show first 10 time periods for brevity
             print(f"  t={t}: {pyo.value(model.V[t]):.2f}")
 
         # Create visualization of the schedule
@@ -219,7 +219,7 @@ def solve(max_time = 5000, number_of_days = 1, tot_number_of_days = 5792):
         ax1.set_yticks(range(0, MACHINES))
         ax1.set_yticklabels([f'Machine {i}' for i in I])
         ax1.set_title('Machine Schedule')
-        ax1.legend([f'Job {j}' for j in J], loc='upper right')
+        #ax1.legend([f'Job {j}' for j in J], loc='upper right')
 
         # Plot energy storage
         ax2.plot(T, storage_values, marker='o', linestyle='-', markersize=4)
@@ -228,7 +228,7 @@ def solve(max_time = 5000, number_of_days = 1, tot_number_of_days = 5792):
         ax2.set_xlabel('Time Period')
         ax2.set_ylabel('Energy Storage')
         ax2.set_title('Energy Storage Levels')
-        ax2.legend()
+        #ax2.legend()
 
         # Plot deficit
         deficit_values = [pyo.value(model.z[t]) for t in T]
@@ -238,7 +238,7 @@ def solve(max_time = 5000, number_of_days = 1, tot_number_of_days = 5792):
         ax3.set_title('Energy Deficit (z_t)')
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_model_3_glpk.svg', format="svg")
+        plt.savefig('schedule_visualization_model_3_glpk.png')
         print("\nSchedule visualization saved as 'schedule_visualization.svg'")
         
         return (pyo.value(model.M),pyo.value(model.N), pyo.value(model.objective))

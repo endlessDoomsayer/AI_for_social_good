@@ -145,9 +145,9 @@ def get_data(number_of_days = 2, day = pd.Timestamp("2018-01-02")):
 
 
     # Sets of dependencies and shared resources
-    M_dependencies = []  # Pairs of machines where the second depends on the first
-    M_shared = []  # Groups of machines that share resources and cannot run simultaneously
-    silent_periods = {}  # Periods when certain machines must be off
+    M_dependencies = [(1,3)]  # Pairs of machines where the second depends on the first
+    M_shared =[(3,4)]  # Groups of machines that share resources and cannot run simultaneously
+    silent_periods = {1:[25,26,27,28,29,30,31,32,33], 5:[32,33,34,35,36,37,38], 6:[24,25,26,27,28,29,30]}  # Periods when certain machines must be off
     
     data["M_dependencies"] = M_dependencies
     data["M_shared"] = M_shared
@@ -311,7 +311,7 @@ def get_data_house():
     # Cost parameters
     # https://www.mosaikosrl.net/batterie-accumulo-fotovoltaico/
     B = 5000 # B: battery capacity  
-    c_b = 2.530 # Cost per battery
+    c_b = 2530 # Cost per battery
     # https://www.ecodirect.com/Canadian-Solar-CS6X-300P-300W-36V-PV-Panel-p/canadian-solar-cs6x-300p.htm?srsltid=AfmBOor_kd4mknwa-Am9K9m7VYG55_jnXMM3QTP7aTw2Y2qCChJ9GuL7
     c_p = 290   # Cost per unit of power: Canadian Solar CS6X-300P (inverter SMA_America_SB7000TL_US240V cost neglected)
     # https://tariffe.segugio.it/guide-e-strumenti/domande-frequenti/quanto-costa-un-kwh-di-energia-elettrica.aspx#:~:text=Il%20prezzo%20dell'energia%20elettrica%20oggi%20%C3%A8%20pari%20a%200,si%20applica%20ai%20clienti%20vulnerabili.

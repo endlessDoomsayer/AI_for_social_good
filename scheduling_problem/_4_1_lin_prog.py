@@ -484,14 +484,14 @@ def print_solution(M,N,data,filename):
             for j in J:
                 if j <= n_jobs[i]:
                     legend_jobs.add(j)
-        ax1.legend([f'Job {j}' for j in sorted(legend_jobs)], loc='upper right')
+        #ax1.legend([f'Job {j}' for j in sorted(legend_jobs)], loc='upper right')
 
         print("\nStorage Levels:")
         for t in T:
             storage_val = s[t].solution_value()
             storage_values.append(storage_val)
-            if t <= 10:  # Show first 10 time periods for brevity
-                print(f"  t={t}: {storage_val:.2f}")
+            #if t <= 10:  # Show first 10 time periods for brevity
+            print(f"  t={t}: {storage_val:.2f}")
 
         ax2.plot(T, storage_values, marker='o', linestyle='-', markersize=4)
         battery_capacity = N * B
@@ -502,7 +502,7 @@ def print_solution(M,N,data,filename):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig("schedule_visualization_"+filename+".svg", format="svg", dpi=300, bbox_inches='tight')
+        plt.savefig("schedule_visualization_"+filename+".png", format="png", dpi=300, bbox_inches='tight')
         print("\nSchedule visualization saved as 'schedule_visualization_"+filename+".svg")
         plt.show()
 

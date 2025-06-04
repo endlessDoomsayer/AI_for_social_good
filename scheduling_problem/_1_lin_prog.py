@@ -315,3 +315,6 @@ def solve(data=get_data()):
         print(f"Total constraints: {solver.NumConstraints()}")
 
         return None, None
+
+if __name__ == "__main__":
+    solve()

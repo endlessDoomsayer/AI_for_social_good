@@ -7,9 +7,10 @@ from combine_data import get_data
 import time
 
 
+# THIS COMPARES THE STANDARD CSP with other enhanced techniques
+
 def float_to_int_round(float_list):
     return {x: round(float_list[x]) for x in float_list}
-
 
 class CSPSolver:
     def __init__(self, data):
@@ -156,6 +157,41 @@ class CSPSolver:
                     model.Add(sum(y[i, t, j] for t in self.T) == 1)
                     for t in range(2, self.T_MAX + 1):
                         model.Add(x[i, t, j] - x[i, t - 1, j] <= y[i, t, j])
+
+    def standard_backtracking_solver(self, M_val, N_val):
+        """Standard backtracking"""
+        print(f"Using Advanced Backtracking with MCV, LCV, Backjumping and No-good Learning for M={M_val}, N={N_val}")
+
+        model = cp_model.CpModel()
+
+        x = {}
+        y = {}
+        for i in self.I:
+            for j in self.J:
+                if j <= self.n_jobs[i]:
+                    for t in self.T:
+                        x[i, t, j] = model.NewBoolVar(f'x_{i}_{t}_{j}')
+                        y[i, t, j] = model.NewBoolVar(f'y_{i}_{t}_{j}')
+
+        s = {t: model.NewIntVar(0, N_val * self.B, f's_{t}') for t in self.T}
+
+
+        # Add all constraints
+        self._add_all_constraints(model, x, y, s, M_val, N_val)
+
+        # Create solver with enhanced heuristics
+        solver = cp_model.CpSolver()
+        status = solver.Solve(model)
+
+        # Optional: Print conflict statistics for debugging
+        print(f"Number of conflicts: {solver.NumConflicts()}")
+        print(f"Number of branches: {solver.NumBranches()}")
+        print(f"Wall time: {solver.WallTime():.2f}s")
+
+        if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+            return True
+        else:
+            return False
 
     def improved_backtracking_solver(self, M_val, N_val):
         """Enhanced backtracking with advanced heuristics and conflict learning"""
@@ -624,12 +660,13 @@ class CSPSolver:
     def solve_with_multiple_techniques(self, M_val, N_val):
         """Try multiple techniques and return all of them"""
         techniques = [
+            ("Standard Backtracking", self.standard_backtracking_solver),
             ("Constraint Propagation", self.constraint_propagation_solver),
             ("Improved Backtracking", self.improved_backtracking_solver),
             ("Simulated Annealing", lambda m, n: self.simulated_annealing_solver(m, n, max_iterations=5000000)),
             ("Local Beam Search", lambda m, n: self.local_beam_search(m, n, beam_width=3)),
             ("Genetic Algorithm", lambda m, n: self.genetic_algorithm_solver(m, n, population_size=20, generations=500)),
-            ("MIN-CONFLICTS", self.min_conflicts_local_search)
+            ("Min-Conflicts", self.min_conflicts_local_search)
         ]
 
         for name, technique in techniques:
@@ -655,142 +692,6 @@ def find_min_enhanced(M_val, N_val, data):
     """Enhanced version of find_min using multiple CSP techniques"""
     solver = CSPSolver(data)
     return solver.solve_with_multiple_techniques(M_val, N_val)
-
-
-def find_min_original(M_val, N_val, data):
-    """Original OR-Tools solver for comparison"""
-    print(f"Using Original OR-Tools solver for M={M_val}, N={N_val}")
-
-    I = data["I"]
-    J = data["J"]
-    T = data["T"]
-    n_jobs = data["n_jobs"]
-    d = data["d"]
-    e = float_to_int_round(data["e"])
-    f = float_to_int_round(data["f"])
-    c_b = data["c_b"]
-    c_p = data["c_p"]
-    c = data["c"]
-    p = float_to_int_round(data["p"])
-    mmm = data["mmm"]
-    silent_periods = data["silent_periods"]
-    M_shared = data["M_shared"]
-    M_dependencies = data["M_dependencies"]
-    B = data["B"]
-    T_MAX = data["T_MAX"]
-    THRESHOLD_FOR_JOB_J_AND_I = data["THRESHOLD_FOR_JOB_J_AND_I"]
-    MACHINES = data["MACHINES"]
-
-    model = cp_model.CpModel()
-
-    # Variables
-    x = {}
-    y = {}
-    for i in I:
-        for j in J:
-            if j <= n_jobs[i]:
-                for t in T:
-                    x[i, t, j] = model.NewBoolVar(f'x_{i}_{t}_{j}')
-                    y[i, t, j] = model.NewBoolVar(f'y_{i}_{t}_{j}')
-
-    s = {t: model.NewIntVar(0, N_val * B, f's_{t}') for t in T}
-
-    # All original constraints...
-    for t in T:
-        model.Add(
-            sum(e[i] * x[i, t, j] + f[i] * y[i, t, j] for i in I for j in J if j <= n_jobs[i]) <= M_val * p[t] + s[t]
-        )
-
-    for t in T:
-        if t == 1:
-            model.Add(s[t] == 0)
-        else:
-            prev_sum = sum(
-                M_val * p[tp] - sum(e[i] * x[i, tp, j] + f[i] * y[i, tp, j] for i in I for j in J if j <= n_jobs[i])
-                for tp in range(1, t)
-            )
-            model.Add(s[t] <= prev_sum)
-
-    for t in T:
-        model.Add(s[t] <= N_val * B)
-
-    for i in I:
-        for j in J:
-            if j <= n_jobs[i]:
-                model.Add(sum(x[i, t, j] for t in T) == d[i])
-
-    for i in I:
-        for t in T:
-            model.Add(sum(x[i, t, j] for j in J if j <= n_jobs[i]) <= 1)
-            model.Add(sum(y[i, t, j] for j in J if j <= n_jobs[i]) <= 1)
-
-    for t in T:
-        model.Add(sum(e[i] * x[i, t, j] for i in I for j in J if j <= n_jobs[i]) <= mmm[t])
-
-    for i in I:
-        for j in J:
-            if j <= n_jobs[i]:
-                for t in T:
-                    if t == 1:
-                        model.Add(x[i, t, j] == y[i, t, j])
-                    else:
-                        model.Add(x[i, t, j] <= y[i, t, j] + x[i, t - 1, j])
-                    model.Add(y[i, t, j] <= x[i, t, j])
-
-    for (k, kp1) in M_dependencies:
-        if k in I and kp1 in I:
-            for t in T:
-                for j in J:
-                    if j <= n_jobs.get(k, 0) and j <= n_jobs.get(kp1, 0):
-                        if t == 1:
-                            model.Add(y[kp1, t, j] == 0)
-                        else:
-                            prev_completions = sum(x[k, tp, j] for tp in range(1, t))
-                            model.Add(y[kp1, t, j] * d[k] <= prev_completions)
-
-    for i in I:
-        for t in T:
-            for j in J:
-                if j <= n_jobs[i]:
-                    if t > c[i]:
-                        cooldown_sum = sum(
-                            1 - sum(x[i, tp, jj] for jj in J if jj <= n_jobs[i]) for tp in range(t - c[i], t))
-                        model.Add(y[i, t, j] * c[i] <= cooldown_sum)
-
-    for i in I:
-        if i in silent_periods:
-            for t in silent_periods[i]:
-                if t <= T_MAX:
-                    model.Add(sum(x[i, t, j] for j in J if j <= n_jobs[i]) == 0)
-
-    for t in T:
-        for group in M_shared:
-            machines_in_group = [i for i in group if i in I]
-            if machines_in_group:
-                model.Add(sum(x[i, t, j] for i in machines_in_group for j in J if j <= n_jobs[i]) <= 1)
-
-    for i in I:
-        for j in J:
-            if j <= n_jobs[i]:
-                for t in range(THRESHOLD_FOR_JOB_J_AND_I[(i, j)] + 1, T_MAX + 1):
-                    model.Add(x[i, t, j] == 0)
-
-    for i in I:
-        for j in J:
-            if j <= n_jobs[i]:
-                model.Add(sum(y[i, t, j] for t in T) == 1)
-                for t in range(2, T_MAX + 1):
-                    model.Add(x[i, t, j] - x[i, t - 1, j] <= y[i, t, j])
-
-    # Solve
-    solver = cp_model.CpSolver()
-    status = solver.Solve(model)
-
-    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        return True
-    else:
-        return False
-
 
 def print_solution_enhanced(M_val, N_val, data):
     """Enhanced solution printer that uses the best available technique"""
@@ -890,359 +791,13 @@ def print_solution_enhanced(M_val, N_val, data):
     else:
         print("Could not extract detailed solution for visualization.")
 
-
-# Stochastic Hill Climbing implementation
-class StochasticHillClimbing:
-    def __init__(self, data):
-        self.data = data
-        self.csp_solver = CSPSolver(data)
-
-    def solve(self, M_val, N_val, max_iterations=5000, restart_probability=0.1):
-        """Stochastic Hill Climbing with random restarts"""
-        print(f"Using Stochastic Hill Climbing for M={M_val}, N={N_val}")
-
-        def generate_random_solution():
-            solution = {}
-            for i in self.data["I"]:
-                for j in self.data["J"]:
-                    if j <= self.data["n_jobs"][i]:
-                        valid_times = [t for t in self.data["T"]
-                                       if t <= self.data["THRESHOLD_FOR_JOB_J_AND_I"].get((i, j), self.data["T_MAX"])]
-                        if valid_times:
-                            solution[(i, j)] = random.choice(valid_times)
-            return solution
-
-        def evaluate_solution(solution):
-            violations = 0
-            e = float_to_int_round(self.data["e"])
-            f = float_to_int_round(self.data["f"])
-            p = float_to_int_round(self.data["p"])
-            d = self.data["d"]
-
-            for t in self.data["T"]:
-                energy_used = 0
-                for i in self.data["I"]:
-                    for j in self.data["J"]:
-                        if j <= self.data["n_jobs"][i] and (i, j) in solution:
-                            start_time = solution[(i, j)]
-                            # Job is running
-                            if start_time <= t <= start_time + d[i] - 1:
-                                energy_used += e[i]
-                            # Job is starting
-                            if start_time == t:
-                                energy_used += f[i]
-
-                if energy_used > M_val * p[t]:
-                    violations += energy_used - M_val * p[t]
-            return violations
-
-        def get_random_neighbor(solution):
-            neighbor = solution.copy()
-            if neighbor:
-                # Choose random variable to change
-                i, j = random.choice(list(neighbor.keys()))
-                valid_times = [t for t in self.data["T"]
-                               if t <= self.data["THRESHOLD_FOR_JOB_J_AND_I"].get((i, j), self.data["T_MAX"])]
-                if valid_times:
-                    # Stochastic choice - prefer better values but allow randomness
-                    current_value = neighbor[(i, j)]
-                    other_values = [t for t in valid_times if t != current_value]
-                    if other_values:
-                        neighbor[(i, j)] = random.choice(other_values)
-            return neighbor
-
-        # Main algorithm
-        current_solution = generate_random_solution()
-        current_cost = evaluate_solution(current_solution)
-        best_solution = current_solution.copy()
-        best_cost = current_cost
-
-        for iteration in range(max_iterations):
-            # Random restart with some probability
-            if random.random() < restart_probability:
-                current_solution = generate_random_solution()
-                current_cost = evaluate_solution(current_solution)
-                print(f"Random restart at iteration {iteration}")
-
-            # Generate random neighbor
-            neighbor = get_random_neighbor(current_solution)
-            neighbor_cost = evaluate_solution(neighbor)
-
-            # Stochastic acceptance (accept if better, or with some probability if worse)
-            if neighbor_cost < current_cost or (neighbor_cost <= current_cost and random.random() < 0.3):
-                current_solution = neighbor
-                current_cost = neighbor_cost
-
-                if current_cost < best_cost:
-                    best_solution = current_solution.copy()
-                    best_cost = current_cost
-
-                    if best_cost == 0:
-                        print(f"Found feasible solution at iteration {iteration}")
-                        return True
-
-        print(f"Best solution found has {best_cost} violations")
-        return best_cost == 0
-
-
-import random
-import math
-from collections import defaultdict
-
-
-class EnhancedTabuSearch:
-    def __init__(self, data):
-        self.data = data
-        self.csp_solver = CSPSolver(data)
-        # CONSTRAINT WEIGHTING: Initialize weights for different constraint types
-        self.constraint_weights = {
-            'energy_capacity': 1.0,
-            'time_window': 1.0,
-            'precedence': 1.0,
-            'resource': 1.0
-        }
-        self.weight_increment = 0.1
-        self.weight_decay = 0.95
-
-    def solve(self, M_val, N_val, max_iterations=3000, tabu_tenure=50,
-              restart_frequency=500, random_walk_prob=0.1):
-        """Enhanced Tabu Search with Min-Conflicts, Restart, Random Walk, and Constraint Weighting"""
-        print(f"Using Enhanced Tabu Search for M={M_val}, N={N_val}")
-
-        def generate_initial_solution():
-            solution = {}
-            for i in self.data["I"]:
-                for j in self.data["J"]:
-                    if j <= self.data["n_jobs"][i]:
-                        valid_times = [t for t in self.data["T"]
-                                       if t <= self.data["THRESHOLD_FOR_JOB_J_AND_I"].get((i, j), self.data["T_MAX"])]
-                        if valid_times:
-                            solution[(i, j)] = random.choice(valid_times)
-            return solution
-
-        def evaluate_solution_with_weights(solution):
-            """Enhanced evaluation with constraint weighting"""
-            violations = {
-                'energy_capacity': 0,
-                'time_window': 0,
-                'precedence': 0,
-                'resource': 0
-            }
-
-            e = float_to_int_round(self.data["e"])
-            f = float_to_int_round(self.data["f"])
-            p = float_to_int_round(self.data["p"])
-            d = self.data["d"]
-
-            # Energy capacity violations
-            for t in self.data["T"]:
-                energy_used = 0
-                for i in self.data["I"]:
-                    for j in self.data["J"]:
-                        if j <= self.data["n_jobs"][i] and (i, j) in solution:
-                            start_time = solution[(i, j)]
-                            if start_time <= t <= start_time + d[i] - 1:
-                                energy_used += e[i]
-                            if start_time == t:
-                                energy_used += f[i]
-
-                if energy_used > M_val * p[t]:
-                    violations['energy_capacity'] += energy_used - M_val * p[t]
-
-            # Time window violations
-            for (i, j), start_time in solution.items():
-                threshold = self.data["THRESHOLD_FOR_JOB_J_AND_I"].get((i, j), self.data["T_MAX"])
-                if start_time > threshold:
-                    violations['time_window'] += start_time - threshold
-
-            # Calculate weighted total
-            total_cost = sum(violations[constraint_type] * self.constraint_weights[constraint_type]
-                             for constraint_type in violations)
-
-            return total_cost, violations
-
-        def get_min_conflicts_neighbors(solution, variable_selection_strategy='most_constrained'):
-            """MIN-CONFLICTS: Generate neighbors that minimize conflicts"""
-            neighbors = []
-
-            # Select variable to modify based on strategy
-            if variable_selection_strategy == 'most_constrained':
-                # Find variable involved in most violations
-                variable_violations = defaultdict(int)
-                _, violations_breakdown = evaluate_solution_with_weights(solution)
-
-                # Count violations per variable (simplified heuristic)
-                for (i, j) in solution:
-                    current_time = solution[(i, j)]
-                    temp_solution = solution.copy()
-                    temp_solution[(i, j)] = current_time + 1 if current_time < self.data["T_MAX"] else current_time - 1
-                    _, temp_violations = evaluate_solution_with_weights(temp_solution)
-                    variable_violations[(i, j)] = sum(temp_violations.values())
-
-                # Select most constrained variable
-                if variable_violations:
-                    target_variable = max(variable_violations.keys(), key=lambda x: variable_violations[x])
-                else:
-                    target_variable = random.choice(list(solution.keys()))
-            else:
-                # Random selection
-                target_variable = random.choice(list(solution.keys()))
-
-            # Generate neighbors for the selected variable
-            i, j = target_variable
-            current_time = solution[target_variable]
-            valid_times = [t for t in self.data["T"]
-                           if t <= self.data["THRESHOLD_FOR_JOB_J_AND_I"].get((i, j), self.data["T_MAX"])]
-
-            neighbor_costs = []
-            for new_time in valid_times:
-                if new_time != current_time:
-                    neighbor = solution.copy()
-                    neighbor[(i, j)] = new_time
-                    cost, _ = evaluate_solution_with_weights(neighbor)
-                    move = ((i, j), current_time, new_time)
-                    neighbor_costs.append((neighbor, move, cost))
-
-            # Sort by cost (min-conflicts heuristic)
-            neighbor_costs.sort(key=lambda x: x[2])
-            return neighbor_costs
-
-        def random_walk_step(solution):
-            """RANDOM WALK: Make a random move"""
-            variable = random.choice(list(solution.keys()))
-            i, j = variable
-            valid_times = [t for t in self.data["T"]
-                           if t <= self.data["THRESHOLD_FOR_JOB_J_AND_I"].get((i, j), self.data["T_MAX"])]
-
-            if len(valid_times) > 1:
-                current_time = solution[variable]
-                new_time = random.choice([t for t in valid_times if t != current_time])
-                new_solution = solution.copy()
-                new_solution[variable] = new_time
-                move = (variable, current_time, new_time)
-                return new_solution, move
-
-            return solution, None
-
-        def update_constraint_weights(violations_breakdown):
-            """CONSTRAINT WEIGHTING: Update weights based on violated constraints"""
-            for constraint_type, violation_count in violations_breakdown.items():
-                if violation_count > 0:
-                    self.constraint_weights[constraint_type] += self.weight_increment
-                else:
-                    self.constraint_weights[constraint_type] *= self.weight_decay
-                    self.constraint_weights[constraint_type] = max(0.1, self.constraint_weights[constraint_type])
-
-        def restart_search():
-            """RESTART: Generate new initial solution and reset tabu list"""
-            print(f"Restarting search...")
-            new_solution = generate_initial_solution()
-            new_tabu_list = []
-            # Decay constraint weights on restart
-            for constraint_type in self.constraint_weights:
-                self.constraint_weights[constraint_type] *= 0.9
-            return new_solution, new_tabu_list
-
-        # Initialize
-        current_solution = generate_initial_solution()
-        current_cost, _ = evaluate_solution_with_weights(current_solution)
-        best_solution = current_solution.copy()
-        best_cost = current_cost
-
-        tabu_list = []
-        stagnation_counter = 0
-        last_improvement = 0
-
-        for iteration in range(max_iterations):
-            # RESTART: Check if restart is needed
-            if iteration > 0 and iteration % restart_frequency == 0:
-                current_solution, tabu_list = restart_search()
-                current_cost, _ = evaluate_solution_with_weights(current_solution)
-                stagnation_counter = 0
-
-            # RANDOM WALK: Occasionally make random moves
-            if random.random() < random_walk_prob:
-                current_solution, random_move = random_walk_step(current_solution)
-                if random_move:
-                    current_cost, violations_breakdown = evaluate_solution_with_weights(current_solution)
-                    update_constraint_weights(violations_breakdown)
-                continue
-
-            # MIN-CONFLICTS: Get neighbors that minimize conflicts
-            neighbors = get_min_conflicts_neighbors(current_solution, 'most_constrained')
-
-            if not neighbors:
-                break
-
-            # Find best non-tabu neighbor
-            best_neighbor = None
-            best_neighbor_cost = float('inf')
-            best_move = None
-
-            for neighbor, move, cost in neighbors:
-                # Check if move is tabu
-                is_tabu = move in tabu_list
-
-                # Accept if not tabu, or if tabu but better than best known (aspiration criterion)
-                if not is_tabu or cost < best_cost:
-                    best_neighbor = neighbor
-                    best_neighbor_cost = cost
-                    best_move = move
-                    break  # Take first improving move (min-conflicts already sorted)
-
-            # Move to best neighbor
-            if best_neighbor is not None:
-                current_solution = best_neighbor
-                current_cost = best_neighbor_cost
-
-                # Add move to tabu list
-                if best_move:
-                    tabu_list.append(best_move)
-                    if len(tabu_list) > tabu_tenure:
-                        tabu_list.pop(0)
-
-                # Update constraint weights
-                _, violations_breakdown = evaluate_solution_with_weights(current_solution)
-                update_constraint_weights(violations_breakdown)
-
-                # Update best solution
-                if current_cost < best_cost:
-                    best_solution = current_solution.copy()
-                    best_cost = current_cost
-                    last_improvement = iteration
-                    stagnation_counter = 0
-
-                    if best_cost == 0:
-                        print(f"Found feasible solution at iteration {iteration}")
-                        return True
-                else:
-                    stagnation_counter += 1
-
-            # Adaptive restart based on stagnation
-            if stagnation_counter > restart_frequency // 2:
-                current_solution, tabu_list = restart_search()
-                current_cost, _ = evaluate_solution_with_weights(current_solution)
-                stagnation_counter = 0
-
-            # Progress reporting
-            if iteration % 100 == 0:
-                print(f"Iteration {iteration}: Best cost = {best_cost:.2f}, Current cost = {current_cost:.2f}")
-                print(f"Constraint weights: {self.constraint_weights}")
-
-        print(f"Best solution found has cost {best_cost}")
-        return best_cost == 0
-
-
 # Enhanced solver that includes all techniques
-def solve_with_all_techniques(M_val, N_val, data):
+def solve(M_val, N_val, data = get_data()):
     """Try all available CSP techniques"""
     print(f"=== Solving CSP with M={M_val}, N={N_val} using ALL techniques ===\n")
 
     techniques = [
-        ("Original OR-Tools", lambda: find_min_original(M_val, N_val, data)),
         ("Enhanced CSP Solver", lambda: find_min_enhanced(M_val, N_val, data)),
-        ("Stochastic Hill Climbing", lambda: StochasticHillClimbing(data).solve(M_val, N_val)),
-        ("Tabu Search", lambda: EnhancedTabuSearch(data).solve(M_val, N_val))
     ]
 
     results = {}
@@ -1293,14 +848,6 @@ def solve_with_all_techniques(M_val, N_val, data):
     print(f"\n{'=' * 60}")
 
     return len(successful_techniques) > 0
-
-
-# Example usage and testing
-def solve(M, N, data = get_data()):
-    
-    # Test with sample data
-    print("Testing enhanced CSP solver with sample data...")
-    solve_with_all_techniques(M, N, data)
 
 if __name__ == "__main__":
     solve(4912, 45)

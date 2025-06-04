@@ -2,6 +2,8 @@ from ortools.linear_solver import pywraplp
 import matplotlib.pyplot as plt
 import combine_data
 
+# THIS USES SCIP AND NOT CSP
+
 def find_min(M, N, data):
     
     print(f"Searching M={M}, N={N}")

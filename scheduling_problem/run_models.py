@@ -1,18 +1,14 @@
-import time
-import _1_bin_search_improved_backtracking
 import _1_bin_search_scip
 import _1_glpk
 import _2
 import _3_local_search
 import _3_milp
-import _4_1_enhanced
+import _4_1_CSP_alternatives
 import _4_1_lin_prog
-import _4_1_milp
-import _4_3_milp 
+import _4_3_milp
 from combine_data import get_data
 import pandas as pd
 import time
-from datetime import datetime
 import sys
 
 
@@ -37,15 +33,7 @@ def run_models_1(policies, days=7, date = "2018-01-01"):
             data = get_data(number_of_days=days, day=day)
 
             start = time.time()
-            if policy == '_1_bin_search_improved_backtracking':
-                M, N = _1_bin_search_improved_backtracking.solve(data=data)
-                if M is None or N is None:
-                    warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
-                    print(warning)
-                    f.write(warning)
-                    continue
-
-            elif policy == '_1_bin_search_scip':
+            if policy == '_1_bin_search_scip':
                 M, N = _1_bin_search_scip.solve(data=data)
                 if M is None or N is None:
                     warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
@@ -206,11 +194,9 @@ def run_models_4(number_of_M_N_per_policy, days=1, date = "2018-01-01"):
             data = get_data(number_of_days=days, day=day)
             
             if policy == '_4_1_enhanced':
-                _4_1_enhanced.solve(M, N, data = data)
+                _4_1_CSP_alternatives.solve(M, N, data = data)
             elif policy == '_4_1_lin_prog':
                 _4_1_lin_prog.solve(M, N, data = data)
-            elif policy == '_4_1_milp':
-                _4_1_milp.solve(M, N, data = data)
             elif policy == '_4_3_milp':
                 _4_3_milp.solve(M, N, data = data)
             else:

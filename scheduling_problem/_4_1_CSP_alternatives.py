@@ -5,12 +5,25 @@ import math
 from collections import defaultdict
 from combine_data import get_data
 import time
+import json
 
 
 # THIS COMPARES THE STANDARD CSP with other enhanced techniques
 
 def float_to_int_round(float_list):
     return {x: round(float_list[x]) for x in float_list}
+
+def get_activity_times(solver, x):
+    """
+    Extract job start times from solution.
+    Returns: dict (i, j) -> start_time
+    """
+    activity_times = {}
+    for (i, t, j), var in x.items():
+        if solver.BooleanValue(var):
+            activity_times[(i, j)] = t
+    return activity_times
+
 
 class CSPSolver:
     def __init__(self, data):
@@ -189,9 +202,9 @@ class CSPSolver:
         print(f"Wall time: {solver.WallTime():.2f}s")
 
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-            return True
+            return True, get_activity_times(solver, x)
         else:
-            return False
+            return False, {}
 
     def improved_backtracking_solver(self, M_val, N_val):
         """Enhanced backtracking with advanced heuristics and conflict learning"""
@@ -284,7 +297,10 @@ class CSPSolver:
         print(f"Number of branches: {solver.NumBranches()}")
         print(f"Wall time: {solver.WallTime():.2f}s")
 
-        return status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
+        if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+            return True, get_activity_times(solver, x)
+        else:
+            return False, {}
 
 
     def constraint_propagation_solver(self, M_val, N_val):
@@ -329,7 +345,10 @@ class CSPSolver:
         print(f"Number of conflicts: {solver.NumConflicts()}")
         print(f"Number of branches: {solver.NumBranches()}")
         print(f"Wall time: {solver.WallTime():.2f}s")
-        return status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
+        if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+            return True, get_activity_times(solver, x)
+        else:
+            return False, {}
 
     def _add_redundant_constraints(self, model, x, y, s, M_val, N_val):
         """Add redundant constraints to improve constraint propagation"""
@@ -346,316 +365,13 @@ class CSPSolver:
                     # A job can only start once
                     model.Add(sum(y[i, t, j] for t in self.T) <= 1)
 
-    def simulated_annealing_solver(self, M_val, N_val, max_iterations=1000000, initial_temp=100, cooling_rate=0.95):
-        """Simulated Annealing approach"""
-        print(f"Using Simulated Annealing for M={M_val}, N={N_val}")
 
-        def generate_random_solution():
-            # Generate a random (possibly infeasible) solution
-            solution = {}
-            for i in self.I:
-                for j in self.J:
-                    if j <= self.n_jobs[i]:
-                        # Randomly assign start time for each job
-                        valid_times = [t for t in self.T if t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX)]
-                        if valid_times:
-                            start_time = random.choice(valid_times)
-                            solution[(i, j)] = start_time
-            return solution
+    def print_solution(self, optimal_schedule):
+        # Convert tuple keys to strings
+        serializable_schedule = {f"{i},{j}": t for (i, j), t in optimal_schedule.items()}
 
-        def evaluate_solution(solution):
-            # Count constraint violations (lower is better)
-            violations = 0
-
-            # Check energy constraints
-            for t in self.T:
-                energy_used = 0
-                for i in self.I:
-                    for j in self.J:
-                        if j <= self.n_jobs[i] and (i, j) in solution:
-                            start_time = solution[(i, j)]
-                            if start_time <= t <= start_time + self.d[i] - 1:
-                                energy_used += self.e[i]
-                            if start_time == t:
-                                energy_used += self.f[i]
-
-                if energy_used > M_val * self.p[t]:
-                    violations += energy_used - M_val * self.p[t]
-
-            return violations
-
-        def get_neighbor(solution):
-            # Create a neighbor by changing one job's start time
-            neighbor = solution.copy()
-            if neighbor:
-                i, j = random.choice(list(neighbor.keys()))
-                valid_times = [t for t in self.T if t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX)]
-                if valid_times:
-                    neighbor[(i, j)] = random.choice(valid_times)
-            return neighbor
-
-        # Initialize
-        current_solution = generate_random_solution()
-        current_cost = evaluate_solution(current_solution)
-        best_solution = current_solution.copy()
-        best_cost = current_cost
-        temperature = initial_temp
-
-        for iteration in range(max_iterations):
-            neighbor = get_neighbor(current_solution)
-            neighbor_cost = evaluate_solution(neighbor)
-
-            # Accept or reject the neighbor
-            if neighbor_cost < current_cost or random.random() < math.exp(
-                    -(neighbor_cost - current_cost) / temperature):
-                current_solution = neighbor
-                current_cost = neighbor_cost
-
-                if current_cost < best_cost:
-                    best_solution = current_solution.copy()
-                    best_cost = current_cost
-
-            temperature *= cooling_rate
-
-            if best_cost == 0:  # Found feasible solution
-                print(f"Found feasible solution at iteration {iteration}")
-                return True
-
-        print(f"Best solution found has {best_cost} violations")
-        return best_cost == 0
-
-    def local_beam_search(self, M_val, N_val, beam_width=5, max_iterations=1000):
-        """Local Beam Search implementation"""
-        print(f"Using Local Beam Search (beam_width={beam_width}) for M={M_val}, N={N_val}")
-
-        def generate_random_solution():
-            solution = {}
-            for i in self.I:
-                for j in self.J:
-                    if j <= self.n_jobs[i]:
-                        valid_times = [t for t in self.T if t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX)]
-                        if valid_times:
-                            solution[(i, j)] = random.choice(valid_times)
-            return solution
-
-        def evaluate_solution(solution):
-            violations = 0
-            for t in self.T:
-                energy_used = 0
-                for i in self.I:
-                    for j in self.J:
-                        if j <= self.n_jobs[i] and (i, j) in solution:
-                            start_time = solution[(i, j)]
-                            if start_time <= t <= start_time + self.d[i] - 1:
-                                energy_used += self.e[i]
-                            if start_time == t:
-                                energy_used += self.f[i]
-
-                if energy_used > M_val * self.p[t]:
-                    violations += energy_used - M_val * self.p[t]
-            return violations
-
-        def get_neighbors(solution):
-            neighbors = []
-            for i, j in solution.keys():
-                valid_times = [t for t in self.T if t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX)]
-                for t in valid_times:
-                    if t != solution[(i, j)]:
-                        neighbor = solution.copy()
-                        neighbor[(i, j)] = t
-                        neighbors.append(neighbor)
-            return neighbors
-
-        # Initialize beam with random solutions
-        beam = [generate_random_solution() for _ in range(beam_width)]
-
-        for iteration in range(max_iterations):
-            # Generate all neighbors
-            all_neighbors = []
-            for solution in beam:
-                all_neighbors.extend(get_neighbors(solution))
-
-            if not all_neighbors:
-                break
-
-            # Evaluate and sort all neighbors
-            neighbor_scores = [(evaluate_solution(sol), sol) for sol in all_neighbors]
-            neighbor_scores.sort(key=lambda x: x[0])
-
-            # Keep best beam_width solutions
-            beam = [sol for score, sol in neighbor_scores[:beam_width]]
-
-            # Check if we found a feasible solution
-            if neighbor_scores[0][0] == 0:
-                print(f"Found feasible solution at iteration {iteration}")
-                return True
-
-        best_score = min(evaluate_solution(sol) for sol in beam)
-        print(f"Best solution found has {best_score} violations")
-        return best_score == 0
-
-    def genetic_algorithm_solver(self, M_val, N_val, population_size=50, generations=1000, mutation_rate=0.1):
-        """Genetic Algorithm implementation"""
-        print(f"Using Genetic Algorithm (pop={population_size}, gen={generations}) for M={M_val}, N={N_val}")
-
-        def create_individual():
-            individual = {}
-            for i in self.I:
-                for j in self.J:
-                    if j <= self.n_jobs[i]:
-                        valid_times = [t for t in self.T if t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX)]
-                        if valid_times:
-                            individual[(i, j)] = random.choice(valid_times)
-            return individual
-
-        def fitness(individual):
-            violations = 0
-            for t in self.T:
-                energy_used = 0
-                for i in self.I:
-                    for j in self.J:
-                        if j <= self.n_jobs[i] and (i, j) in individual:
-                            start_time = individual[(i, j)]
-                            if start_time <= t <= start_time + self.d[i] - 1:
-                                energy_used += self.e[i]
-                            if start_time == t:
-                                energy_used += self.f[i]
-
-                if energy_used > M_val * self.p[t]:
-                    violations += energy_used - M_val * self.p[t]
-            return -violations  # Higher fitness is better
-
-        def crossover(parent1, parent2):
-            child = {}
-            for key in parent1.keys():
-                child[key] = parent1[key] if random.random() < 0.5 else parent2[key]
-            return child
-
-        def mutate(individual):
-            if random.random() < mutation_rate:
-                key = random.choice(list(individual.keys()))
-                i, j = key
-                valid_times = [t for t in self.T if t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX)]
-                if valid_times:
-                    individual[key] = random.choice(valid_times)
-            return individual
-
-        # Initialize population
-        population = [create_individual() for _ in range(population_size)]
-
-        for generation in range(generations):
-            # Evaluate fitness
-            fitness_scores = [(fitness(ind), ind) for ind in population]
-            fitness_scores.sort(key=lambda x: x[0], reverse=True)
-
-            # Check for feasible solution
-            if fitness_scores[0][0] == 0:
-                print(f"Found feasible solution at generation {generation}")
-                return True
-
-            # Selection and reproduction
-            new_population = []
-
-            # Keep best 20% (elitism)
-            elite_count = population_size // 5
-            new_population.extend([ind for score, ind in fitness_scores[:elite_count]])
-
-            # Generate rest through crossover and mutation
-            while len(new_population) < population_size:
-                # Tournament selection
-                parent1 = max(random.sample(fitness_scores[:population_size // 2], 3))[1]
-                parent2 = max(random.sample(fitness_scores[:population_size // 2], 3))[1]
-
-                child = crossover(parent1, parent2)
-                child = mutate(child)
-                new_population.append(child)
-
-            population = new_population
-
-        # Final evaluation
-        final_fitness = [fitness(ind) for ind in population]
-        best_fitness = max(final_fitness)
-        print(f"Best solution found has {-best_fitness} violations")
-        return best_fitness == 0
-
-    def min_conflicts_local_search(self, M_val, N_val, max_steps=10000):
-        """MIN-CONFLICTS local search algorithm"""
-        print(f"Using MIN-CONFLICTS Local Search for M={M_val}, N={N_val}")
-
-        def generate_initial_solution():
-            solution = {}
-            for i in self.I:
-                for j in self.J:
-                    if j <= self.n_jobs[i]:
-                        valid_times = [t for t in self.T if t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX)]
-                        if valid_times:
-                            solution[(i, j)] = random.choice(valid_times)
-            return solution
-
-        def count_conflicts(solution, var=None):
-            conflicts = 0
-            for t in self.T:
-                energy_used = 0
-                for i in self.I:
-                    for j in self.J:
-                        if j <= self.n_jobs[i] and (i, j) in solution:
-                            start_time = solution[(i, j)]
-                            if start_time <= t <= start_time + self.d[i] - 1:
-                                energy_used += self.e[i]
-                            if start_time == t:
-                                energy_used += self.f[i]
-
-                if energy_used > M_val * self.p[t]:
-                    conflicts += 1
-            return conflicts
-
-        def get_min_conflict_value(solution, var):
-            i, j = var
-            valid_times = [t for t in self.T if t <= self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX)]
-
-            min_conflicts = float('inf')
-            best_values = []
-
-            for value in valid_times:
-                temp_solution = solution.copy()
-                temp_solution[var] = value
-                conflicts = count_conflicts(temp_solution)
-
-                if conflicts < min_conflicts:
-                    min_conflicts = conflicts
-                    best_values = [value]
-                elif conflicts == min_conflicts:
-                    best_values.append(value)
-
-            return random.choice(best_values) if best_values else valid_times[0]
-
-        # Initialize
-        current_solution = generate_initial_solution()
-
-        for step in range(max_steps):
-            conflicts = count_conflicts(current_solution)
-
-            if conflicts == 0:
-                print(f"Found feasible solution at step {step}")
-                return True
-
-            # Choose a random conflicted variable
-            conflicted_vars = []
-            for var in current_solution.keys():
-                temp_solution = current_solution.copy()
-                del temp_solution[var]
-                if count_conflicts(temp_solution) < conflicts:
-                    conflicted_vars.append(var)
-
-            if not conflicted_vars:
-                conflicted_vars = list(current_solution.keys())
-
-            var = random.choice(conflicted_vars)
-            current_solution[var] = get_min_conflict_value(current_solution, var)
-
-        final_conflicts = count_conflicts(current_solution)
-        print(f"Final solution has {final_conflicts} conflicts")
-        return final_conflicts == 0
+        with open("optimal_schedule.json", "w") as f:
+            json.dump(serializable_schedule, f, indent=2)
 
     def solve_with_multiple_techniques(self, M_val, N_val):
         """Try multiple techniques and return all of them"""
@@ -663,26 +379,23 @@ class CSPSolver:
             ("Standard Backtracking", self.standard_backtracking_solver),
             ("Constraint Propagation", self.constraint_propagation_solver),
             ("Improved Backtracking", self.improved_backtracking_solver),
-            ("Simulated Annealing", lambda m, n: self.simulated_annealing_solver(m, n, max_iterations=5000000)),
-            ("Local Beam Search", lambda m, n: self.local_beam_search(m, n, beam_width=3)),
-            ("Genetic Algorithm", lambda m, n: self.genetic_algorithm_solver(m, n, population_size=20, generations=500)),
-            ("Min-Conflicts", self.min_conflicts_local_search)
         ]
 
         for name, technique in techniques:
             print(f"\n--- Trying {name} ---")
             try:
                 start = time.time()
-                el = technique(M_val, N_val)
+                el, optimal = technique(M_val, N_val)
                 end = time.time()
                 
                 print(f"Time taken for {name}: {end - start}")
                 if el:
-                    print(f"✓ {name} found a feasible solution!")
+                    print(f"️✔️ {name} found a feasible solution!")
+                    self.print_solution(optimal)
                 else:
-                    print(f"✗ {name} did not find a feasible solution")
+                    print(f"❌ {name} did not find a feasible solution")
             except Exception as e:
-                print(f"✗ {name} failed with error: {e}")
+                print(f"❌ {name} failed with error: {e}")
 
         return True
 

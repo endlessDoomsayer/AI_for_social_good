@@ -1,14 +1,4 @@
-import time
-import _1_bin_search_improved_backtracking
-import _1_bin_search_scip
-import _1_glpk
-import _2
-import _3_local_search
-import _3_milp
-import _4_1_milp
-import _4_1_enhanced
-import _4_1_lin_prog
-import _4_3_milp
+
 import scheduling_problem.run_models as run_models
 
 

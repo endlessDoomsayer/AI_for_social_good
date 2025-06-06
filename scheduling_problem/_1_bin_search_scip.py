@@ -2,9 +2,6 @@ from combine_data import get_data
 from _4_1_lin_prog import *
 import time
 
-# 12442, 43
-# 13088, 41
-
 def binary_search_N(min_M, max_N, data, is_feasible):
     """
     For a fixed M, binary search to find the minimum feasible N

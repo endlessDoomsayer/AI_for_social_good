@@ -57,14 +57,12 @@ def solve(data=get_data()):
                     x[i, t, j].SetBounds(0, 0)  # Fix to 0
                     y[i, t, j].SetBounds(0, 0)  # Fix to 0
 
-    # Objective: Minimize battery and power costs
+    # Objective function: Minimize battery and power costs
     solver.Minimize(N_var * c_b + M_var * c_p)
 
     # Constraints
 
     # 1. Energy balance constraint
-    # sum(e[i] * x[i, t, j] + f[i] * y[i, t, j] for i in I for j in J) - M * p[t] - s[t] <= 0
-    # Rearranged: sum(e[i] * x[i,t,j] + f[i] * y[i,t,j]) <= M * p[t] + s[t]
     for t in T:
         constraint = solver.Constraint(-solver.infinity(), 0)
         constraint.SetCoefficient(M_var, -p[t])
@@ -79,8 +77,6 @@ def solve(data=get_data()):
         if t == 1:
             solver.Add(s[t] == 0)  # Assume starting with empty storage
         else:
-            # s[t] <= sum(M * p[tp] - sum(e[i] * x[i, tp, j] + f[i] * y[i, tp, j] for i in I for j in J) for tp in range(1, t))
-            # Rearranged: s[t] + sum_{tp=1}^{t-1} sum_{i,j}(e[i] * x[i,tp,j] + f[i] * y[i,tp,j]) <= sum_{tp=1}^{t-1} M * p[tp]
             constraint = solver.Constraint(-solver.infinity(), 0)
             constraint.SetCoefficient(s[t], 1)
 
@@ -92,23 +88,23 @@ def solve(data=get_data()):
                         constraint.SetCoefficient(y[i, tp, j], f[i])
 
     # 3. Battery capacity constraint
-    # s[t] <= N * B
     for t in T:
         constraint = solver.Constraint(-solver.infinity(), 0)
         constraint.SetCoefficient(s[t], 1)
         constraint.SetCoefficient(N_var, -B)
 
+        constraint = solver.Constraint(-solver.infinity(), 0)
+        constraint.SetCoefficient(s[t], -1)
+
     # 4. Each job must run for required duration
-    # sum(x[i, t, j] for t in T) == d[i] (for j <= n_jobs[i])
     for i in I:
         for j in J:
-            if j <= n_jobs[i]:  # Only add constraint for required jobs
-                constraint = solver.Constraint(d[i], d[i])
+            if j <= n_jobs[i]:
+                constraint = solver.Constraint(d[i], solver.infinity())
                 for t in T:
                     constraint.SetCoefficient(x[i, t, j], 1)
 
     # 5. Each machine can do one job at a time
-    # sum(x[i, t, j] for j in J) <= 1
     for i in I:
         for t in T:
             constraint = solver.Constraint(-solver.infinity(), 1)
@@ -116,7 +112,6 @@ def solve(data=get_data()):
                 constraint.SetCoefficient(x[i, t, j], 1)
 
     # 6. Same for starting
-    # sum(y[i, t, j] for j in J) <= 1
     for i in I:
         for t in T:
             constraint = solver.Constraint(-solver.infinity(), 1)
@@ -124,7 +119,6 @@ def solve(data=get_data()):
                 constraint.SetCoefficient(y[i, t, j], 1)
 
     # 7. Max energy constraint
-    # sum(e[i] * x[i, t, j] for i in I for j in J) <= mmm[t]
     for t in T:
         constraint = solver.Constraint(-solver.infinity(), mmm[t])
         for i in I:
@@ -136,8 +130,8 @@ def solve(data=get_data()):
         if i in I:  # Make sure machine i is in our set
             for t in silent_periods[i]:
                 if t in T and t <= T_MAX:
-                    constraint = solver.Constraint(0, 0)
                     for j in J:
+                        constraint = solver.Constraint(0, 0)
                         constraint.SetCoefficient(x[i, t, j], 1)
 
     # 9. Shared resource constraint
@@ -159,14 +153,12 @@ def solve(data=get_data()):
                     solver.Add(x[i, t, j] == y[i, t, j])
                 else:
                     # For subsequent periods: x[i,t,j] <= y[i,t,j] + x[i,t-1,j]
-                    # Rearranged: x[i,t,j] - y[i,t,j] - x[i,t-1,j] <= 0
                     constraint = solver.Constraint(-solver.infinity(), 0)
                     constraint.SetCoefficient(x[i, t, j], 1)
                     constraint.SetCoefficient(y[i, t, j], -1)
                     constraint.SetCoefficient(x[i, t - 1, j], -1)
 
     # 10b. When you start a job, you must run it
-    # y[i, t, j] <= x[i, t, j]
     for i in I:
         for t in T:
             for j in J:
@@ -182,25 +174,20 @@ def solve(data=get_data()):
                             solver.Add(y[kp1, t, j] == 0)  # Cannot start dependent job at first time period
                         else:
                             # Job on machine kp1 can start only if job on machine k was completed
-                            # y[kp1,t,j] <= sum(x[k,tp,j] for tp in range(1,t)) / d[k]
-                            # Rearranged: y[kp1,t,j] * d[k] <= sum(x[k,tp,j] for tp in range(1,t))
                             constraint = solver.Constraint(-solver.infinity(), 0)
                             constraint.SetCoefficient(y[kp1, t, j], d[k])
                             for tp in range(1, t):
                                 constraint.SetCoefficient(x[k, tp, j], -1)
 
-    # 12. Cooldown constraint
+    # 12. Cooldown constraint. TODO: check if this is correct
     for i in I:
         for t in T:
-            for j in J:
-                if t > c[i]:
-                    # Simplified cooldown: machine must be idle for at least 1 period before starting
-                    if t > 1:
-                        # y[i,t,j] + sum(x[i,t-1,jj] for jj in J) <= 1
-                        constraint = solver.Constraint(-solver.infinity(), 1)
-                        constraint.SetCoefficient(y[i, t, j], 1)
-                        for jj in J:
-                            constraint.SetCoefficient(x[i, t - 1, jj], 1)
+            if t > c[i]:
+                constraint = solver.Constraint(-solver.infinity(), n_jobs[i]*c[i])
+                for j in J:
+                    constraint.SetCoefficient(y[i, t, j], c[i])
+                    for tp in range(t-c[i], t):
+                        constraint.SetCoefficient(x[i, tp, j], 1)
 
     # 13. Job must be completed before threshold
     for i in I:

@@ -8,7 +8,7 @@ from nilm.dataset_functions import Dataset, plot_data
 from weather_pv_conversion.solar_production import SolarProductionPredictor 
 
 
-def get_data(number_of_days = 2, day = pd.Timestamp("2018-01-02")):
+def get_data(number_of_days = 2, day = pd.Timestamp("2018-02-18")):
     
     end_date = day+pd.to_timedelta(number_of_days-1, unit='D')
     

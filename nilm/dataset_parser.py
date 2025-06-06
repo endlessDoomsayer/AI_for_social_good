@@ -1,12 +1,17 @@
 from nilmtk import DataSet
 from nilmtk.elecmeter import ElecMeterID
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
 
 def load_dataset(path_to_dataset):
+    '''
+    Load the NILM dataset from the specified path and select the relevant meters and columns for the project.
+
+    :param path_to_dataset: Path to the NILM dataset
+    :return: DatasetHandler object containing the loaded dataset
+    '''
     ds = DatasetHandler(path_to_dataset)
 
     ds.set_start_time(pd.Timestamp('2017-12-11'))
@@ -20,7 +25,25 @@ def load_dataset(path_to_dataset):
 
 
 class DatasetHandler:
+    '''
+    Handles the loading and processing of the NILM dataset.
+
+    Attributes:
+        path: Path to the NILM dataset
+        start_time: Start time for the data window
+        end_time: End time for the data window
+        useful_meters: List of useful electrical meters
+        useful_columns: List of useful data columns
+        loaded_data: Dictionary to hold the loaded data for each meter
+        json_dataset: Dictionary to hold the dataset in JSON format
+    '''
     def __init__(self, path):
+        '''
+        Initializes the DatasetHandler with the path to the NILM dataset.
+
+        :param path: Path to the NILM dataset
+        
+        '''
         self.path = path
         self.nilm_dataset = DataSet(path)
 
@@ -31,12 +54,22 @@ class DatasetHandler:
         self.end_time = end_time
     
     def set_useful_meters(self, useful_meters):
+        '''
+        Set the useful electrical meters for the dataset.
+
+        :param useful_meters: List of meter IDs to be used in the dataset
+        '''
         self.useful_meters = [ElecMeterID(instance = id, building = 1, dataset = self.nilm_dataset.metadata['name']) for id in useful_meters]
 
     def set_useful_columns(self, useful_columns):
         self.useful_columns = useful_columns
     
     def init(self):
+        '''
+        Initialize the dataset handler by loading the data for the specified meters and time window.
+        This function sets the time window for the dataset, loads the data for the specified meters, and processes it to create a DataFrame with hourly markers.
+        It also shifts the indices by -12 hours and renames the columns to 'power_apparent', 'current', and 'voltage'.
+        '''
         self.nilm_dataset.set_window(start=self.start_time, end=self.end_time)
         self.elec_meters = self.nilm_dataset.buildings[1].elec
 
@@ -79,27 +112,34 @@ class DatasetHandler:
     def get_machine_name(self, machine_id):
         return self.elec_meters[machine_id.instance].label()
     
-    def get_power_usage(self, machine_id, start, end):
-        """
+    def get_power_usage(self, start, end):
+        '''
         This function retrieves the power usage in a given time interval.
+
         :param start: start time of the interval
         :param end: end time of the interval
         :return: power usage in the given time interval
-        """
+        '''
         #filter the data by the given time interval
         df = df[(df.index >= start) & (df.index <= end)]
         #return the power usage
         return df
     
     def get_loaded_data(self):
-        """
+        '''
         This function retrieves the loaded data.
+
         :return: loaded data
-        """
+        '''
         return self.loaded_data
     
     def convert_nilm_to_json(self):
-        
+        '''
+        Convert the NILM dataset to JSON format.
+        This function iterates through all the useful meters, collects their data, and organizes it into a JSON-compatible dictionary structure.
+        The keys of the dictionary are timestamps, and the values are dictionaries containing the meter data at that timestamp.
+        The resulting JSON structure is stored in the `json_dataset` attribute.
+        '''
         print("Converting nilm to json...")
 
         all_keys = pd.DatetimeIndex([])
@@ -137,10 +177,11 @@ class DatasetHandler:
         print("Finished converting nilm to json")
 
     def save_dataset_to_json(self, path):
-        """
-        This function saves the dataset to an xml file.
-        :param path: path to the xml file
-        """
+        '''
+        This function saves the dataset to a json file.
+        
+        :param path: path to the json file
+        '''
         if not self.json_dataset:
             print("json dataset is empty, converting nilm to json")
             self.convert_nilm_to_json()

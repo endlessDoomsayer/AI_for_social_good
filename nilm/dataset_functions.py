@@ -3,6 +3,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 def plot_data(machine_names, data_slice):
+    '''
+    Plot the power usage data for the specified machines over time.
+
+    :param machine_names: List of machine names to plot
+    :param data_slice: Dictionary containing the data to plot
+    '''
     #start, *_, end = data_slice.keys()
     powers = {}
     time_index = []
@@ -24,7 +30,13 @@ def plot_data(machine_names, data_slice):
     plt.legend(loc='best')
 
 class Dataset:
+    '''
+    Handles the loading and processing of the json dataset.
+    '''
     def __init__(self, name, path):
+        '''
+        Initializes the Dataset object with the given name and path.
+        '''
         self.name = name
         self.path = path
         self.data = None
@@ -71,6 +83,13 @@ class Dataset:
         return start_time, end_time
     
     def get_data_start_end(self, start_time: pd.Timestamp, end_time: pd.Timestamp):
+        '''
+        Get the data in the given time interval.
+
+        :param start_time: start time of the interval
+        :param end_time: end time of the interval
+        :return: data in the given time interval as a dictionary
+        '''
         #get the data in the given time interval
         start_time = start_time.tz_localize(None)
         end_time = end_time.tz_localize(None)
@@ -82,6 +101,12 @@ class Dataset:
         return data
     
     def get_data_day(self, day: pd.Timestamp):
+        '''
+        Get the data for a given day.
+
+        :param day: the day to get the data of
+        :return: data for the given day as a dictionary
+        '''
         #get the data for a given day
         data = {}
         for key in self.data.keys():
@@ -90,6 +115,12 @@ class Dataset:
         return data
     
     def get_data_week(self, day: pd.Timestamp):
+        '''
+        Get the data for a given week.
+
+        :param day: the day to get the data of (used to determine the week)
+        :return: data for the given week as a dictionary
+        '''
         #get the data for a given week
         week = day.isocalendar()[1]
         data = {}
@@ -99,6 +130,12 @@ class Dataset:
         return data
     
     def get_data_month(self, day: pd.Timestamp):
+        '''
+        Get the data for a given month.
+
+        :param day: the day to get the data of (used to determine the month)
+        :return: data for the given month as a dictionary
+        '''
         #month = day.isocalendar().
         #get the data for a given month
         data = {}
@@ -108,6 +145,14 @@ class Dataset:
         return data
     
     def get_average_power_usage(self, machine_name: str, start_time: pd.Timestamp, end_time: pd.Timestamp):
+        '''
+        Get the average power usage for a given machine in a given time interval.
+
+        :param machine_name: name of the machine to get the average power usage of
+        :param start_time: start time of the interval
+        :param end_time: end time of the interval
+        :return: average power usage in the given time interval
+        '''
         #get the average power usage for a given machine in a given time interval
         data = self.get_data_start_end(start_time, end_time)
         total_power = 0

@@ -2,8 +2,6 @@ from ortools.linear_solver import pywraplp
 import matplotlib.pyplot as plt
 import combine_data
 
-# THIS USES SCIP AND NOT CSP
-
 def add_constraints(solver, data, M, N, x, y, s):
     I = data["I"]
     J = data["J"]

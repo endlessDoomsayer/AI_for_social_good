@@ -51,7 +51,7 @@ class SolarProductionPredictor:
                     print(f"Scaler was fit on features (order from scaler.feature_names_in_): {list(self.scaler.feature_names_in_)}")
             except Exception as e:
                 print(f"WARNING: Failed to load scaler from '{os.path.abspath(scaler_path)}': {e}")
-                self.scaler = None # Ensure scaler is None if loading fails
+                self.scaler = None 
 
     def _fetch_weather_data(self, start_date_api, end_date_api):
         """
@@ -64,7 +64,7 @@ class SolarProductionPredictor:
         openmeteo = openmeteo_requests.Client(session=retry_session)
 
         url = "https://archive-api.open-meteo.com/v1/archive"
-        # Standard set of weather features our SVR model (and its scaler) were trained on
+        
         api_required_features = [
             "temperature_2m", "precipitation", "wind_speed_10m", "snowfall", "rain",
             "cloud_cover", "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
@@ -165,20 +165,15 @@ class SolarProductionPredictor:
 
                 if scaler_expected_features_ordered: # Proceed only if scaler expects features
                     try:
-                        # Prepare data for scaler: select columns in the order scaler expects
                         data_to_transform = X_predict_raw[scaler_expected_features_ordered]
-                        
-
                         scaled_values = self.scaler.transform(data_to_transform)
-                        
-                        # Update the final prediction DataFrame with scaled values
                         X_for_prediction_final.loc[:, scaler_expected_features_ordered] = scaled_values
                         print("Data scaled successfully.")
                     except ValueError as ve:
                         print(f"ERROR during scaling: {ve}")
                         print(f"  Attempted to scale columns (ordered by scaler.feature_names_in_): {scaler_expected_features_ordered}")
                         if hasattr(self.scaler, 'n_features_in_'):
-                             print(f"  (Debug) Scaler expects {self.scaler.n_features_in_} features.")
+                             print(f"Scaler expects {self.scaler.n_features_in_} features.")
                         print("Cannot proceed with prediction due to scaling error.")
                         return pd.DataFrame(columns=['predicted_production'])
                 else:
@@ -201,7 +196,7 @@ class SolarProductionPredictor:
 
         except Exception as e:
             print(f"An error occurred during prediction: {e}")
-            traceback.print_exc() # Print full traceback for unexpected errors
+            traceback.print_exc()
             return pd.DataFrame(columns=['predicted_production'])
     
     def sum_predicted_production(self, predictions_df: pd.DataFrame) -> float:
@@ -217,42 +212,3 @@ class SolarProductionPredictor:
         
         total_production = predictions_df['predicted_production'].sum()
         return total_production
-"""
-if __name__ == '__main__': #da cancellareeee
-
-    base_output_dir = "weather_pv_conversion/output/model" 
-    
-    model_file_name = "best_estimator_model.pkl"
-    scaler_file_name = "scaler.pkl"
-
-    model_file_path = os.path.join(base_output_dir, model_file_name)
-    scaler_file_path = os.path.join(base_output_dir, scaler_file_name)
-    
-    if not os.path.exists(model_file_path):
-        print(f"ERROR: Model file not found at {os.path.abspath(model_file_path)}. Please ensure it's saved correctly.")
-        exit()
-    if not os.path.exists(scaler_file_path):
-        print(f"WARNING: Scaler file not found at {os.path.abspath(scaler_file_path)}. Predictions may be inaccurate.")
-    
-
-    predictor = SolarProductionPredictor(model_path=model_file_path, scaler_path=scaler_file_path)
-
-    start_date_test = "2024-07-10" 
-    print(f"\n--- Test Case 1: {start_date_test} ---")
-    predictions = predictor.predict(start_date_test, start_hour=8, end_date_str=start_date_test, end_hour=17)
-    print("AAAA")
-    print(predictor.sum_predicted_production(predictions))
-    if not predictions.empty:
-        print(f"Predictions for {start_date_test}:\n{predictions}")
-    else:
-        print(f"No predictions returned for {start_date_test}.")
-
-    start_date_2_test = "2024-07-10"
-    end_date_2_test = "2024-07-11"
-    print(f"\n--- Test Case 2: {start_date_2_test} to {end_date_2_test} ---")
-    predictions_multi_day = predictor.predict(start_date_2_test, start_hour=0, end_date_str=end_date_2_test, end_hour=23)
-    if not predictions_multi_day.empty:
-        print(f"Predictions from {start_date_2_test} to {end_date_2_test}:\n{predictions_multi_day}")
-    else:
-        print(f"No predictions returned for {start_date_2_test} to {end_date_2_test}.")
-"""

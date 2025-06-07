@@ -295,23 +295,21 @@ def print_solution(M,N,data,filename):
                 constraint.SetCoefficient(x[i, t, j], e[i])
                 constraint.SetCoefficient(y[i, t, j], f[i])
 
-    # Constraint 2: Storage computation constraint
-    # Pyomo: m.s[t] <= sum(M * p[tp] - sum(e[i] * m.x[i, tp, j] + f[i] * m.y[i, tp, j] for i in m.I for j in m.J) for tp in range(1, t))
-    for t in T:
-        if t == 1:
-            solver.Add(s[t] == 0)  # Starting with empty storage
-        else:
-            # s[t] <= sum_{tp=1}^{t-1}[M * p[tp] - sum_{i,j}(e[i] * x[i,tp,j] + f[i] * y[i,tp,j])]
-            # Rearranged: s[t] + sum_{tp=1}^{t-1} sum_{i,j}(e[i] * x[i,tp,j] + f[i] * y[i,tp,j]) <= sum_{tp=1}^{t-1} M * p[tp]
-            rhs_value = sum(M * p[tp] for tp in range(1, t))
-            constraint = solver.Constraint(-solver.infinity(), rhs_value)
-            constraint.SetCoefficient(s[t], 1)
-            
-            for tp in range(1, t):
+        # 2. Storage computation constraint
+        for t in T:  # TODO: this has changed, change in all the other models
+            if t == 1:
+                solver.Add(s[t] == 0)  # Assume starting with empty storage
+            else:
+                # s[t] = s[t-1] + production[t-1] - consumption[t-1]
+                constraint = solver.Constraint(M*p[t], M*p[t])
+                constraint.SetCoefficient(s[t], 1)
+                constraint.SetCoefficient(s[t - 1], -1)
+
+                # Add consumption from previous period
                 for i in I:
                     for j in J:
-                        constraint.SetCoefficient(x[i, tp, j], e[i])
-                        constraint.SetCoefficient(y[i, tp, j], f[i])
+                        constraint.SetCoefficient(x[i, t - 1, j], e[i])  # Running consumption
+                        constraint.SetCoefficient(y[i, t - 1, j], f[i])  # Startup consumption
 
     # Constraint 3: Battery capacity constraint
     # Pyomo: m.s[t] <= N * B

@@ -81,7 +81,7 @@ def solve(data=get_data()):
             constraint = solver.Constraint(0, 0)
             constraint.SetCoefficient(s[t], 1)
             constraint.SetCoefficient(s[t - 1], -1)
-            constraint.SetCoefficient(M_var, -p[t - 1])
+            constraint.SetCoefficient(M_var, -p[t])
 
             # Add consumption from previous period
             for i in I:
@@ -247,7 +247,7 @@ def solve(data=get_data()):
         # Print energy storage levels
         storage_values = [s[t].solution_value() for t in T]
         print("\nStorage Levels:")
-        for t in range(1, min(11, T_MAX + 1)):  # Show first 10 time periods for brevity
+        for t in range(1, T_MAX + 1):  # Show first 10 time periods for brevity
             print(f"  t={t}: {s[t].solution_value():.2f}")
 
         # Create visualization of the schedule

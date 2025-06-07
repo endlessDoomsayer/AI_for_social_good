@@ -1,7 +1,7 @@
 from combine_data import get_data
 
 
-def print_sol(M,N, number_of_days = 7, data = get_data()):
+def print_sol(M,N, number_of_days = 1, data = get_data()):
     print("M:", M)
     print("N:", N)
 
@@ -25,12 +25,7 @@ def print_sol(M,N, number_of_days = 7, data = get_data()):
 
     total_cost = (c_e*total_energy)
 
-    # using Inverter SMA Sunny Boy SB7000TL-US-22 7000 W 
-    # i need to buy 2 an inverter every 24 panels 
-    total_inverter = M/24
 
-    total_cost_panels += total_inverter * 3000  # i dont found the correct price
-    
     print("Total cost if we buy panels:", total_cost_panels)
     print("Total cost if we don't buy panels:", total_cost)
 
@@ -42,4 +37,4 @@ def print_sol(M,N, number_of_days = 7, data = get_data()):
     return days, days/365
 
 if __name__ == "__main__":
-    print_sol(4912,45)
+    print_sol(2490,166)

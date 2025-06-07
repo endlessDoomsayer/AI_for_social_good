@@ -8,7 +8,7 @@ from nilm.dataset_functions import Dataset, plot_data
 from weather_pv_conversion.solar_production import SolarProductionPredictor 
 
 
-def get_data(number_of_days = 2, day = pd.Timestamp("2018-02-18")):
+def get_data(number_of_days = 7, day = pd.Timestamp("2018-02-19")):
     
     end_date = day+pd.to_timedelta(number_of_days-1, unit='D')
     
@@ -49,8 +49,8 @@ def get_data(number_of_days = 2, day = pd.Timestamp("2018-02-18")):
 
     # Define sets
     I = list(range(1, MACHINES + 1 )) # machines 
-    T = list(range(1, T_MAX + 1)) # time periods TODO
-    J = list(range(1, MAX_JOB_N + 1)) # jobs TODO
+    T = list(range(1, T_MAX + 1)) # time periods
+    J = list(range(1, MAX_JOB_N + 1)) # jobs
     
     data["T"] = T
     data["I"] = I
@@ -69,29 +69,27 @@ def get_data(number_of_days = 2, day = pd.Timestamp("2018-02-18")):
     print("e =", e)
     data["e"] = e
 
-    # f_i: additional energy consumed when machine i starts TODO
+    # f_i: additional energy consumed when machine i starts
     f = {i: int(e[i] * (1/6)) for i in e}
     print("f =", f)
     data["f"] = f
 
     # d_i: duration of job i on machine i
     d = {}
-    d[1] = 2
-    d[2] = 2
-    d[3] = 2
-    d[4] = 2
-    d[5] = 2
-    d[6] = 2
+    d[1] = 6
+    d[2] = 6
+    d[3] = 6
+    d[4] = 6
+    d[5] = 12
+    d[6] = 12
     print("d =", d)
     data["d"] = d
 
- 
-    
+
     # 2. SOLAR PANELS
     # p_t: energy produced at time t by one unit of power
     print("\n--------------------------------------\nSOLAR PANELS\n")
-    
-    
+
     predictions_df = solar_predictor.predict(start_date_str=day.strftime("%Y-%m-%d"), end_date_str=end_date.strftime("%Y-%m-%d"))
     p = {}
     for idx, (timestamp, row) in enumerate(predictions_df.iterrows(), start=1):
@@ -109,8 +107,9 @@ def get_data(number_of_days = 2, day = pd.Timestamp("2018-02-18")):
     c_b = 2530 # Cost per battery
     # https://www.ecodirect.com/Canadian-Solar-CS6X-300P-300W-36V-PV-Panel-p/canadian-solar-cs6x-300p.htm?srsltid=AfmBOor_kd4mknwa-Am9K9m7VYG55_jnXMM3QTP7aTw2Y2qCChJ9GuL7
     c_p = 290   # Cost per unit of power: Canadian Solar CS6X-300P (inverter SMA_America_SB7000TL_US240V cost neglected)
-    # TODO: ogni 25 pannelli solari c'è un inverter
-    c_i = 3000 # Cost per inverter
+    # Every 24 solar panels there is an inverter.
+    # Using Inverter SMA Sunny Boy SB7000TL-US-22 7000 W
+    c_p += 3000/24 # Cost per inverter
     # https://tariffe.segugio.it/guide-e-strumenti/domande-frequenti/quanto-costa-un-kwh-di-energia-elettrica.aspx#:~:text=Il%20prezzo%20dell'energia%20elettrica%20oggi%20%C3%A8%20pari%20a%200,si%20applica%20ai%20clienti%20vulnerabili.
     c_e = 0.16053/1000 # Cost of energy 
     
@@ -121,7 +120,7 @@ def get_data(number_of_days = 2, day = pd.Timestamp("2018-02-18")):
     data["c_e"] = c_e
     
 
-    # m_t: maximum energy available at time t TODO
+    # m_t: maximum energy available at time t. An industry can consume around 100MW if it's big enough, here we are considering 100kW
     mmm = {t: random.randint(800000, 1000000) for t in T}
     data["mmm"] = mmm
 
@@ -129,14 +128,14 @@ def get_data(number_of_days = 2, day = pd.Timestamp("2018-02-18")):
     n_jobs = {}
     n_jobs[1] = 2*number_of_days
     n_jobs[2] = 2*number_of_days
-    n_jobs[3] = 1*number_of_days
-    n_jobs[4] = 1*number_of_days
-    n_jobs[5] = 1*number_of_days
-    n_jobs[6] = 1*number_of_days
+    n_jobs[3] = number_of_days
+    n_jobs[4] = number_of_days
+    n_jobs[5] = number_of_days
+    n_jobs[6] = number_of_days
     data["n_jobs"] = n_jobs
 
-    # c_i: cooldown period for machine i TODO
-    c = {i: 1 for i in I}
+    # c_i: cooldown period for machine i
+    c = {i: (i-1)//2 for i in I}
     data["c"] = c
     
     # THRESHOLD_FOR_JOB_J

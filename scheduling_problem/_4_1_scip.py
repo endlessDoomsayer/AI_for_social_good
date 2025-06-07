@@ -1,10 +1,10 @@
 from ortools.linear_solver import pywraplp
 import matplotlib.pyplot as plt
-from combine_data import get_data
-import time
+import combine_data
 
+# THIS USES SCIP AND NOT CSP
 
-def solve(data=get_data()):
+def add_constraints(solver, data, M, N, x, y, s):
     I = data["I"]
     J = data["J"]
     T = data["T"]
@@ -12,8 +12,6 @@ def solve(data=get_data()):
     d = data["d"]
     e = data["e"]
     f = data["f"]
-    c_b = data["c_b"]
-    c_p = data["c_p"]
     c = data["c"]
     p = data["p"]
     mmm = data["mmm"]
@@ -23,33 +21,8 @@ def solve(data=get_data()):
     B = data["B"]
     T_MAX = data["T_MAX"]
     THRESHOLD_FOR_JOB_J_AND_I = data["THRESHOLD_FOR_JOB_J_AND_I"]
-    MACHINES = data["MACHINES"]
 
-    # Create the linear solver
-    solver = pywraplp.Solver.CreateSolver('SCIP')
-    if not solver:
-        solver = pywraplp.Solver.CreateSolver('CBC')
-        if not solver:
-            print('No suitable solver found.')
-            return None, None
-
-    # Variables
-    M_var = solver.IntVar(0, solver.infinity(), 'M')  # Number of power units
-    N_var = solver.IntVar(0, solver.infinity(), 'N')  # Number of batteries
-
-    # Binary variables - Create for ALL i,j,t combinations first
-    x = {}
-    y = {}
-    for i in I:
-        for j in J:
-            for t in T:
-                x[i, t, j] = solver.BoolVar(f'x_{i}_{t}_{j}')
-                y[i, t, j] = solver.BoolVar(f'y_{i}_{t}_{j}')
-
-    # Storage variables
-    s = {t: solver.NumVar(0, solver.infinity(), f's_{t}') for t in T}
-
-    # Fix variables for jobs that a machine can't do
+    # Fix variables for jobs that a machine can't do (matching Pyomo exactly)
     for i in I:
         for j in J:
             if j > n_jobs[i]:
@@ -57,15 +30,9 @@ def solve(data=get_data()):
                     x[i, t, j].SetBounds(0, 0)  # Fix to 0
                     y[i, t, j].SetBounds(0, 0)  # Fix to 0
 
-    # Objective function: Minimize battery and power costs
-    solver.Minimize(N_var * c_b + M_var * c_p)
-
-    # Constraints
-
     # 1. Energy balance constraint
     for t in T:
-        constraint = solver.Constraint(-solver.infinity(), 0)
-        constraint.SetCoefficient(M_var, -p[t])
+        constraint = solver.Constraint(-solver.infinity(), M*p[t])
         constraint.SetCoefficient(s[t], -1)
         for i in I:
             for j in J:
@@ -73,31 +40,24 @@ def solve(data=get_data()):
                 constraint.SetCoefficient(y[i, t, j], f[i])
 
     # 2. Storage computation constraint
-    for t in T:#TODO: this has changed, change in all the other models
+    for t in T:
         if t == 1:
             solver.Add(s[t] == 0)  # Assume starting with empty storage
         else:
             # s[t] = s[t-1] + production[t-1] - consumption[t-1]
-            constraint = solver.Constraint(0, 0)
+            constraint = solver.Constraint(M * p[t], M * p[t])
             constraint.SetCoefficient(s[t], 1)
             constraint.SetCoefficient(s[t - 1], -1)
-            constraint.SetCoefficient(M_var, -p[t])
 
             # Add consumption from previous period
             for i in I:
                 for j in J:
                     constraint.SetCoefficient(x[i, t - 1, j], e[i])  # Running consumption
                     constraint.SetCoefficient(y[i, t - 1, j], f[i])  # Startup consumption
-
     # 3. Battery capacity constraint
     for t in T:
-        constraint = solver.Constraint(-solver.infinity(), 0)
+        constraint = solver.Constraint(-solver.infinity(), N*B)
         constraint.SetCoefficient(s[t], 1)
-        constraint.SetCoefficient(N_var, -B)
-
-        #constraint = solver.Constraint(-solver.infinity(), 0)
-        #constraint.SetCoefficient(s[t], -1)
-
 
     # 4. Each job must run for required duration
     for i in I:
@@ -106,7 +66,6 @@ def solve(data=get_data()):
                 constraint = solver.Constraint(d[i], d[i])
                 for t in T:
                     constraint.SetCoefficient(x[i, t, j], 1)
-
 
     # 5. Each machine can do one job at a time
     for i in I:
@@ -187,10 +146,10 @@ def solve(data=get_data()):
     for i in I:
         for t in T:
             if t > c[i]:
-                constraint = solver.Constraint(-solver.infinity(), n_jobs[i]*c[i])
+                constraint = solver.Constraint(-solver.infinity(), n_jobs[i] * c[i])
                 for j in J:
                     constraint.SetCoefficient(y[i, t, j], c[i])
-                    for tp in range(t-c[i], t):
+                    for tp in range(t - c[i], t):
                         constraint.SetCoefficient(x[i, tp, j], 1)
 
     # 13. Job must be completed before threshold
@@ -202,40 +161,95 @@ def solve(data=get_data()):
                     if t in T:
                         x[i, t, j].SetBounds(0, 0)  # Fix to 0
 
-    # Solve the model
-    print("Solving the model...")
+def find_min(M, N, data):
+    
+    print(f"Searching M={M}, N={N}")
 
-    start = time.time()
+    # Create the linear solver
+    solver = pywraplp.Solver.CreateSolver('SCIP')
+    if not solver:
+        solver = pywraplp.Solver.CreateSolver('CBC')
+        if not solver:
+            print('No suitable solver found.')
+            exit()
+
+    T = data["T"]
+    I = data["I"]
+    J = data["J"]
+
+    # Variables
+    x = {}
+    y = {}
+    for i in I:
+        for j in J:
+            for t in T:
+                x[i, t, j] = solver.BoolVar(f'x_{i}_{t}_{j}')
+                y[i, t, j] = solver.BoolVar(f'y_{i}_{t}_{j}')
+
+    # Storage variables
+    s = {t: solver.NumVar(0, solver.infinity(), f's_{t}') for t in T}
+
+    add_constraints(solver, data, M, N, x, y, s)
+
+    # Solve
     status = solver.Solve()
-    end = time.time()
 
-    print(f"Time taken for solving: {end - start}")
+    if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
+        return True
+    else:
+        return False
 
-    # Print results
+def print_solution(M,N,data,filename):
+    # Create the linear solver
+    solver = pywraplp.Solver.CreateSolver('SCIP')
+    if not solver:
+        solver = pywraplp.Solver.CreateSolver('CBC')
+        if not solver:
+            print('No suitable solver found.')
+            exit()
+
+    T = data["T"]
+    I = data["I"]
+    J = data["J"]
+
+    # Variables
+    x = {}
+    y = {}
+    for i in I:
+        for j in J:
+            for t in T:
+                x[i, t, j] = solver.BoolVar(f'x_{i}_{t}_{j}')
+                y[i, t, j] = solver.BoolVar(f'y_{i}_{t}_{j}')
+
+    # Storage variables
+    s = {t: solver.NumVar(0, solver.infinity(), f's_{t}') for t in T}
+
+    add_constraints(solver, data, M, N, x, y, s)
+
+    # Solve
+    status = solver.Solve()
+
     status_dict = {
         pywraplp.Solver.OPTIMAL: "OPTIMAL",
-        pywraplp.Solver.FEASIBLE: "FEASIBLE",
+        pywraplp.Solver.FEASIBLE: "FEASIBLE", 
         pywraplp.Solver.INFEASIBLE: "INFEASIBLE",
         pywraplp.Solver.UNBOUNDED: "UNBOUNDED",
         pywraplp.Solver.ABNORMAL: "ABNORMAL",
         pywraplp.Solver.NOT_SOLVED: "NOT_SOLVED"
     }
-
-    print(f"\nSolution Status: {status_dict.get(status, 'UNKNOWN')}")
-
+    print(f"Status: {status_dict.get(status, 'UNKNOWN')}")
+    
     if status == pywraplp.Solver.OPTIMAL or status == pywraplp.Solver.FEASIBLE:
-        print(f"Objective Value: {solver.Objective().Value()}")
+        print(f"Solution found!")
+        
+        storage_values = []
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
 
-        # Print number of panels and batteries
-        M_value = int(M_var.solution_value())
-        N_value = int(N_var.solution_value())
-        print(f"\nNumber of Batteries: {N_value}")
-        print(f"\nNumber of Panels: {M_value}")
-
-        # Print machine schedules
-        for i in I:
+        print("\nMachine Schedules:")
+        for i in data["I"]:
             print(f"\nMachine {i} Schedule:")
-            for j in J:
+            n_jobs = data["n_jobs"]
+            for j in data["J"]:
                 if j <= n_jobs[i]:  # Only check feasible jobs
                     start_times = [t for t in T if y[i, t, j].solution_value() > 0.5]
                     operative_times = [t for t in T if x[i, t, j].solution_value() > 0.5]
@@ -243,39 +257,25 @@ def solve(data=get_data()):
                         print(f"  Job {j} starts at t={start_times}")
                     if operative_times:
                         print(f"  Job {j} operates at t={operative_times}")
+                        for t in operative_times:
+                            ax1.bar(t, 1, bottom=i - 1, color=f'C{j % 10}', edgecolor='black', linewidth=0.5)
 
-        # Print energy storage levels
-        storage_values = [s[t].solution_value() for t in T]
-        print("\nStorage Levels:")
-        for t in range(1, T_MAX + 1):  # Show first 10 time periods for brevity
-            print(f"  t={t}: {s[t].solution_value():.2f}")
-
-        # Create visualization of the schedule
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
-
-        # Plot machine schedules
-        for i in I:
-            for t in T:
-                for j in J:
-                    if j <= n_jobs[i] and x[i, t, j].solution_value() > 0.5:
-                        ax1.bar(t, 1, bottom=i - 1, color=f'C{j}', edgecolor='black', linewidth=0.5)
+        MACHINES = data["MACHINES"]
 
         ax1.set_xlabel('Time Period')
         ax1.set_ylabel('Machine')
         ax1.set_yticks(range(0, MACHINES))
         ax1.set_yticklabels([f'Machine {i}' for i in I])
         ax1.set_title('Machine Schedule')
-        # Create legend for jobs that actually exist
-        legend_jobs = set()
-        for i in I:
-            for j in J:
-                if j <= n_jobs[i]:
-                    legend_jobs.add(j)
-        ax1.legend([f'Job {j}' for j in sorted(legend_jobs)], loc='upper right')
 
-        # Plot energy storage
-        ax2.plot(T, storage_values, marker='o', linestyle='-', markersize=4)
-        battery_capacity = N_value * B
+        print("\nStorage Levels:")
+        for t in data["T"]:
+            storage_val = s[t].solution_value()
+            storage_values.append(storage_val)
+            print(f"  t={t}: {storage_val:.2f}")
+
+        ax2.plot(data["T"], storage_values, marker='o', linestyle='-', markersize=4)
+        battery_capacity = N * data["B"]
         ax2.axhline(y=battery_capacity, color='r', linestyle='--', label=f'Battery Capacity ({battery_capacity})')
         ax2.set_xlabel('Time Period')
         ax2.set_ylabel('Energy Storage')
@@ -283,8 +283,9 @@ def solve(data=get_data()):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_1_scip.svg', format="svg")
-        print("\nSchedule visualization saved as 'schedule_visualization_1_scip.svg'")
+        plt.savefig("schedule_visualization_"+filename+".png", format="png", dpi=300, bbox_inches='tight')
+        print("\nSchedule visualization saved as 'schedule_visualization_"+filename+".svg")
+        plt.show()
 
         # Print solution statistics
         print(f"\nSolution Statistics:")
@@ -292,20 +293,21 @@ def solve(data=get_data()):
         print(f"Total constraints: {solver.NumConstraints()}")
         print(f"Solve time: {solver.wall_time()} ms")
 
-        return M_value, N_value
-
     else:
         print("Failed to find an optimal solution.")
         print("Possible issues:")
         print("1. Problem is infeasible")
-        print("2. Solver timeout")
+        print("2. Solver timeout") 
         print("3. Numerical issues with constraints")
-
+        
         print(f"\nSolver info:")
         print(f"Total variables: {solver.NumVariables()}")
         print(f"Total constraints: {solver.NumConstraints()}")
-
-        return None, None
+        
+def solve(M, N):
+    data = combine_data.get_data()
+    #find_min(M,N,data)
+    print_solution(M,N,data,"4_1_lin_prog")
 
 if __name__ == "__main__":
-    solve()
+    solve(4912,45)

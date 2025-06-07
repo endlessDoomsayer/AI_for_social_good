@@ -4,7 +4,7 @@ import _2
 import _3_local_search
 import _3_milp
 import _4_1_CSP_alternatives
-import _4_1_lin_prog
+import _4_1_scip
 import _4_3_milp
 from combine_data import get_data
 import pandas as pd

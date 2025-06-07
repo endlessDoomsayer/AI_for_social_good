@@ -1,5 +1,5 @@
 from combine_data import get_data
-from _4_1_lin_prog import *
+from _4_1_scip import *
 import time
 
 def binary_search_M(min_N, max_M, data, is_feasible):

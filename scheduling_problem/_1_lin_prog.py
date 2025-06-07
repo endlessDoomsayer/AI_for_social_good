@@ -73,19 +73,21 @@ def solve(data=get_data()):
                 constraint.SetCoefficient(y[i, t, j], f[i])
 
     # 2. Storage computation constraint
-    for t in T:
+    for t in T:#TODO: this has changed, change in all the other models
         if t == 1:
             solver.Add(s[t] == 0)  # Assume starting with empty storage
         else:
-            constraint = solver.Constraint(-solver.infinity(), 0)
+            # s[t] = s[t-1] + production[t-1] - consumption[t-1]
+            constraint = solver.Constraint(0, 0)
             constraint.SetCoefficient(s[t], 1)
+            constraint.SetCoefficient(s[t - 1], -1)
+            constraint.SetCoefficient(M_var, -p[t - 1])
 
-            for tp in range(1, t):
-                constraint.SetCoefficient(M_var, -p[tp])
-                for i in I:
-                    for j in J:
-                        constraint.SetCoefficient(x[i, tp, j], e[i])
-                        constraint.SetCoefficient(y[i, tp, j], f[i])
+            # Add consumption from previous period
+            for i in I:
+                for j in J:
+                    constraint.SetCoefficient(x[i, t - 1, j], e[i])  # Running consumption
+                    constraint.SetCoefficient(y[i, t - 1, j], f[i])  # Startup consumption
 
     # 3. Battery capacity constraint
     for t in T:
@@ -93,16 +95,18 @@ def solve(data=get_data()):
         constraint.SetCoefficient(s[t], 1)
         constraint.SetCoefficient(N_var, -B)
 
-        constraint = solver.Constraint(-solver.infinity(), 0)
-        constraint.SetCoefficient(s[t], -1)
+        #constraint = solver.Constraint(-solver.infinity(), 0)
+        #constraint.SetCoefficient(s[t], -1)
+
 
     # 4. Each job must run for required duration
     for i in I:
         for j in J:
             if j <= n_jobs[i]:
-                constraint = solver.Constraint(d[i], solver.infinity())
+                constraint = solver.Constraint(d[i], d[i])
                 for t in T:
                     constraint.SetCoefficient(x[i, t, j], 1)
+
 
     # 5. Each machine can do one job at a time
     for i in I:

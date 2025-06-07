@@ -76,12 +76,12 @@ def get_data(number_of_days = 2, day = pd.Timestamp("2018-02-18")):
 
     # d_i: duration of job i on machine i
     d = {}
-    d[1] = 6
-    d[2] = 6
-    d[3] = 6
-    d[4] = 6
-    d[5] = 12
-    d[6] = 12
+    d[1] = 2
+    d[2] = 2
+    d[3] = 2
+    d[4] = 2
+    d[5] = 2
+    d[6] = 2
     print("d =", d)
     data["d"] = d
 

@@ -308,4 +308,4 @@ def solve(M, N):
     print_solution(M,N,data,"4_1_lin_prog")
 
 if __name__ == "__main__":
-    solve(4912,45)
+    solve(5000,1000)

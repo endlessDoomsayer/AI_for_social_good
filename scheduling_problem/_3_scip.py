@@ -4,7 +4,7 @@ import time
 from combine_data import get_data
 
 
-def solve(max_time=5000, number_of_days=1, tot_number_of_days=5792):
+def solve(max_time=5000, number_of_days=1, tot_number_of_days=4011):
     # Get data
     data = get_data()
 
@@ -22,7 +22,7 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=5792):
     c_b = data["c_b"]
     c_p = data["c_p"]
     c_e = data["c_e"]
-    c_e *= (tot_number_of_days)
+    c_e *= tot_number_of_days/number_of_days
     c = data["c"]
     p = float_to_round(data["p"])
     mmm = data["mmm"]
@@ -34,7 +34,6 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=5792):
     THRESHOLD_FOR_JOB_J_AND_I = data["THRESHOLD_FOR_JOB_J_AND_I"]
     MACHINES = data["MACHINES"]
 
-    BIG_M = 1000000
 
     # Create the linear solver
     solver = pywraplp.Solver.CreateSolver('SCIP')
@@ -60,8 +59,6 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=5792):
     # Continuous variables
     s = {t: solver.NumVar(0, solver.infinity(), f's_{t}') for t in T}  # Energy stored at time t
     z = {t: solver.NumVar(0, solver.infinity(), f'z_{t}') for t in T}  # Deficit variable
-    V = {t: solver.NumVar(-solver.infinity(), solver.infinity(), f'V_{t}') for t in T}  # Volume variable
-    b = {t: solver.BoolVar(f'b_{t}') for t in T}  # Binary variable for V_t sign
 
     # Fix variables for jobs that a machine can't do
     for i in I:
@@ -81,172 +78,149 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=5792):
 
     # Constraints
 
-    # 1. Energy balance constraint with deficit
-    # sum(e[i] * x[i, t, j] + f[i] * y[i, t, j]) - M * p[t] - s[t] <= z[t]
+    # 1. Energy balance constraint
     for t in T:
         constraint = solver.Constraint(-solver.infinity(), 0)
+        constraint.SetCoefficient(M_var, -p[t])
+        constraint.SetCoefficient(s[t], -1)
+        constraint.SetCoefficient(z[t], -1)
         for i in I:
             for j in J:
                 constraint.SetCoefficient(x[i, t, j], e[i])
                 constraint.SetCoefficient(y[i, t, j], f[i])
-        constraint.SetCoefficient(M_var, -p[t])
-        constraint.SetCoefficient(s[t], -1)
-        constraint.SetCoefficient(z[t], -1)
 
-    # 2. Volume calculation constraint
-    # V[t] == sum(M * p[tp] - sum(e[i] * x[i, tp, j] + f[i] * y[i, tp, j])) for tp in range(1, t)
+    # 2. Storage computation constraint
     for t in T:
-        constraint = solver.Constraint(0, 0)  # Equality constraint
-        constraint.SetCoefficient(V[t], 1)
+        if t == 1:
+            solver.Add(s[t] == 0)  # Assume starting with empty storage
+        else:
+            # s[t] = s[t-1] + production[t-1] - consumption[t-1]
+            constraint = solver.Constraint(0, 0)
+            constraint.SetCoefficient(s[t], 1)
+            constraint.SetCoefficient(s[t - 1], -1)
+            constraint.SetCoefficient(M_var, -p[t])
+            constraint.SetCoefficient(z[t-1], -1)
 
-        for tp in range(1, t):
-            constraint.SetCoefficient(M_var, -p[tp])
+            # Add consumption from previous period
             for i in I:
                 for j in J:
-                    constraint.SetCoefficient(x[i, tp, j], e[i])
-                    constraint.SetCoefficient(y[i, tp, j], f[i])
+                    constraint.SetCoefficient(x[i, t - 1, j], e[i])  # Running consumption
+                    constraint.SetCoefficient(y[i, t - 1, j], f[i])  # Startup consumption
 
-    # 3. Constraints for binary variable b_t based on V_t sign
-    # V[t] >= -BIG_M * (1 - b[t])
-    for t in T:
-        constraint = solver.Constraint(-BIG_M, solver.infinity())
-        constraint.SetCoefficient(V[t], 1)
-        constraint.SetCoefficient(b[t], BIG_M)
-
-    # V[t] <= BIG_M * b[t]
-    for t in T:
-        constraint = solver.Constraint(-solver.infinity(), 0)
-        constraint.SetCoefficient(V[t], 1)
-        constraint.SetCoefficient(b[t], -BIG_M)
-
-    # 4. Storage constraints based on V_t and b_t
-    # s[t] <= V[t] + BIG_M * (1 - b[t])
-    for t in T:
-        constraint = solver.Constraint(-solver.infinity(), BIG_M)
-        constraint.SetCoefficient(s[t], 1)
-        constraint.SetCoefficient(V[t], -1)
-        constraint.SetCoefficient(b[t], -BIG_M)
-
-    # s[t] <= BIG_M * b[t]
-    for t in T:
-        constraint = solver.Constraint(-solver.infinity(), 0)
-        constraint.SetCoefficient(s[t], 1)
-        constraint.SetCoefficient(b[t], -BIG_M)
-
-    # 5. Battery capacity constraint
-    # s[t] <= N * B
+    # 3. Battery capacity constraint
     for t in T:
         constraint = solver.Constraint(-solver.infinity(), 0)
         constraint.SetCoefficient(s[t], 1)
         constraint.SetCoefficient(N_var, -B)
 
-    # 6. Each job must run for required duration
+        # constraint = solver.Constraint(-solver.infinity(), 0)
+        # constraint.SetCoefficient(s[t], -1)
+
+    # 4. Each job must run for required duration
     for i in I:
         for j in J:
-            if j <= n_jobs[i]:  # Only add constraint for required jobs
+            if j <= n_jobs[i]:
                 constraint = solver.Constraint(d[i], d[i])
                 for t in T:
                     constraint.SetCoefficient(x[i, t, j], 1)
 
-    # 7. Each machine can do one job at a time
+    # 5. Each machine can do one job at a time
     for i in I:
         for t in T:
             constraint = solver.Constraint(-solver.infinity(), 1)
             for j in J:
                 constraint.SetCoefficient(x[i, t, j], 1)
 
-    # 8. Each machine can start one job at a time
+    # 6. Same for starting
     for i in I:
         for t in T:
             constraint = solver.Constraint(-solver.infinity(), 1)
             for j in J:
                 constraint.SetCoefficient(y[i, t, j], 1)
 
-    # 9. Max energy constraint
+    # 7. Max energy constraint
     for t in T:
         constraint = solver.Constraint(-solver.infinity(), mmm[t])
         for i in I:
             for j in J:
                 constraint.SetCoefficient(x[i, t, j], e[i])
 
-    # 10. Silent periods for machines
+    # 8. Silent periods for machines (some machines must be off at specific times)
     for i in silent_periods:
-        if i in I:
+        if i in I:  # Make sure machine i is in our set
             for t in silent_periods[i]:
                 if t in T and t <= T_MAX:
-                    constraint = solver.Constraint(0, 0)
                     for j in J:
+                        constraint = solver.Constraint(0, 0)
                         constraint.SetCoefficient(x[i, t, j], 1)
 
-    # 11. Shared resource constraint
+    # 9. Shared resource constraint
     for t in T:
         for group in M_shared:
-            machines_in_group = [i for i in group if i in I]
+            machines_in_group = [i for i in group if i in I]  # Ensure the machines are in our defined set
             if machines_in_group:
                 constraint = solver.Constraint(-solver.infinity(), 1)
                 for i in machines_in_group:
                     for j in J:
                         constraint.SetCoefficient(x[i, t, j], 1)
 
-    # 12. Start implies run and continuity constraint
+    # 10. Start implies run and ensure continuity constraint
     for i in I:
         for t in T:
             for j in J:
                 if t == 1:
-                    # x[i,1,j] == y[i,1,j]
+                    # For the first time period: x[i,t,j] = y[i,t,j]
                     solver.Add(x[i, t, j] == y[i, t, j])
                 else:
-                    # x[i,t,j] <= y[i,t,j] + x[i,t-1,j]
+                    # For subsequent periods: x[i,t,j] <= y[i,t,j] + x[i,t-1,j]
                     constraint = solver.Constraint(-solver.infinity(), 0)
                     constraint.SetCoefficient(x[i, t, j], 1)
                     constraint.SetCoefficient(y[i, t, j], -1)
                     constraint.SetCoefficient(x[i, t - 1, j], -1)
 
-    # 13. When you start a job, you must run it
+    # 10b. When you start a job, you must run it
     for i in I:
         for t in T:
             for j in J:
                 solver.Add(y[i, t, j] <= x[i, t, j])
 
-    # 14. Dependency constraint
+    # 11. Dependency constraint
     for (k, kp1) in M_dependencies:
-        if k in I and kp1 in I:
+        if k in I and kp1 in I:  # Ensure both machines are in our defined set
             for t in T:
                 for j in J:
-                    if t == 1:
-                        solver.Add(y[kp1, t, j] == 0)
-                    else:
-                        # y[kp1,t,j] <= sum(x[k,tp,j] for tp in range(1,t)) / d[k]
-                        constraint = solver.Constraint(-solver.infinity(), 0)
-                        constraint.SetCoefficient(y[kp1, t, j], d[k])
-                        for tp in range(1, t):
-                            constraint.SetCoefficient(x[k, tp, j], -1)
+                    if j <= n_jobs.get(k, 0) and j <= n_jobs.get(kp1, 0):  # Both machines must be able to do job j
+                        if t == 1:
+                            solver.Add(y[kp1, t, j] == 0)  # Cannot start dependent job at first time period
+                        else:
+                            # Job on machine kp1 can start only if job on machine k was completed
+                            constraint = solver.Constraint(-solver.infinity(), 0)
+                            constraint.SetCoefficient(y[kp1, t, j], d[k])
+                            for tp in range(1, t):
+                                constraint.SetCoefficient(x[k, tp, j], -1)
 
-    # 15. Cooldown constraint
+    # 12. Cooldown constraint.
     for i in I:
         for t in T:
             if t > c[i]:
+                constraint = solver.Constraint(-solver.infinity(), n_jobs[i] * c[i])
                 for j in J:
-                    # Simplified cooldown: y[i,t,j] + sum(x[i,tp,jj] for all jj) <= c[i] for tp in range(t-c[i], t)
-                    constraint = solver.Constraint(-solver.infinity(), c[i])
-                    constraint.SetCoefficient(y[i, t, j], 1)
-                    for tp in range(max(1, t - c[i]), t):
-                        for jj in J:
-                            constraint.SetCoefficient(x[i, tp, jj], 1)
+                    constraint.SetCoefficient(y[i, t, j], c[i])
+                    for tp in range(t - c[i], t):
+                        constraint.SetCoefficient(x[i, tp, j], 1)
 
-    # 16. Job must be completed before threshold
+    # 13. Job must be completed before threshold
     for i in I:
         for j in J:
             if j <= n_jobs[i]:  # Only apply for required jobs
                 threshold = THRESHOLD_FOR_JOB_J_AND_I.get((i, j), T_MAX)
                 for t in range(threshold + 1, T_MAX + 1):
                     if t in T:
-                        x[i, t, j].SetBounds(0, 0)
-
-    # Set solver parameters
-    solver.SetTimeLimit(max_time * 1000)  # Convert seconds to milliseconds
+                        x[i, t, j].SetBounds(0, 0)  # Fix to 0
 
     # Solve the model
+    solver.SetTimeLimit(1000*max_time)
+
     print("Solving the model...")
     start = time.time()
     status = solver.Solve()
@@ -276,7 +250,7 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=5792):
 
         # Print deficit values
         print("\nDeficit Values (z_t):")
-        for t in range(1, min(11, T_MAX + 1)):  # Show first 10 time periods for brevity
+        for t in range(1, T_MAX + 1):  # Show first 10 time periods for brevity
             print(f"  t={t}: {z[t].solution_value():.2f}")
 
         # Print machine schedules
@@ -293,13 +267,8 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=5792):
         # Print energy storage levels
         storage_values = [s[t].solution_value() for t in T]
         print("\nStorage Levels:")
-        for t in range(1, min(11, T_MAX + 1)):  # Show first 10 time periods for brevity
+        for t in range(1, T_MAX + 1):
             print(f"  t={t}: {s[t].solution_value():.2f}")
-
-        # Print volume values
-        print("\nVolume Values (V_t):")
-        for t in range(1, min(11, T_MAX + 1)):  # Show first 10 time periods for brevity
-            print(f"  t={t}: {V[t].solution_value():.2f}")
 
         # Create visualization of the schedule
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 12))
@@ -316,7 +285,7 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=5792):
         ax1.set_yticks(range(0, MACHINES))
         ax1.set_yticklabels([f'Machine {i}' for i in I])
         ax1.set_title('Machine Schedule')
-        ax1.legend([f'Job {j}' for j in J], loc='upper right')
+        #ax1.legend([f'Job {j}' for j in J], loc='upper right')
 
         # Plot energy storage
         ax2.plot(T, storage_values, marker='o', linestyle='-', markersize=4)
@@ -338,7 +307,7 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=5792):
         plt.savefig('schedule_visualization_model_3_scip.svg', format="svg")
         print("\nSchedule visualization saved as 'schedule_visualization_model_3_scip.svg'")
 
-        return (M_value, N_value, solver.Objective().Value())
+        return M_value, N_value, solver.Objective().Value()
 
     else:
         print("Failed to find an optimal solution.")

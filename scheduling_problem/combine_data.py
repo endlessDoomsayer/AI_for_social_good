@@ -51,13 +51,8 @@ def generate_data(data, number_of_days):
     data["mmm"] = mmm
 
     # n_i: number of jobs required for machine i
-    n_jobs = {}
-    n_jobs[1] = 2 * number_of_days
-    n_jobs[2] = 2 * number_of_days
-    n_jobs[3] = number_of_days
-    n_jobs[4] = number_of_days
-    n_jobs[5] = number_of_days
-    n_jobs[6] = number_of_days
+    n_jobs = {1: 2 * number_of_days, 2: 2 * number_of_days, 3: number_of_days, 4: number_of_days, 5: number_of_days,
+              6: number_of_days}
     data["n_jobs"] = n_jobs
 
     # c_i: cooldown period for machine i
@@ -93,7 +88,7 @@ def generate_data(data, number_of_days):
     print("--------------------------------------\n")
 
 
-def get_data(number_of_days = 7, day = pd.Timestamp("2018-02-19")):
+def get_data(number_of_days = 1, day = pd.Timestamp("2018-02-19")):
     
     end_date = day+pd.to_timedelta(number_of_days-1, unit='D')
     
@@ -154,13 +149,7 @@ def get_data(number_of_days = 7, day = pd.Timestamp("2018-02-19")):
     data["f"] = f
 
     # d_i: duration of job i on machine i
-    d = {}
-    d[1] = 6
-    d[2] = 6
-    d[3] = 6
-    d[4] = 6
-    d[5] = 12
-    d[6] = 12
+    d = {1: 6, 2: 6, 3: 6, 4: 6, 5: 12, 6: 12}
     print("d =", d)
     data["d"] = d
 

@@ -37,4 +37,4 @@ def print_sol(M,N, number_of_days = 1, data = get_data()):
     return days, days/365
 
 if __name__ == "__main__":
-    print_sol(2490,166)
+    print_sol(2491,166)

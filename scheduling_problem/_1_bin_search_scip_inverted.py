@@ -39,8 +39,8 @@ def binary_search_N(max_N, max_M, data, is_feasible):
 def solve(data = get_data()):
     # Define the search bounds for M and N
 
-    biggestM = 100000
-    biggestN = 100000
+    biggestM = 10000
+    biggestN = 10000
 
    
     

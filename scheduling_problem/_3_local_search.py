@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import time
 import copy
 from combine_data import get_data
-import _3_milp
+import _3_scip
 
 class LocalSearchSolver:
 

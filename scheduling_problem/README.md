@@ -5,6 +5,9 @@ system.
 To see the full specifications of the phases and the corresponding models, open the 
 `main_script.ipynb` file.
 
+`combine_data.py` is the script that takes the data from NILM and from the solar panels predictor and generates all the data.
+It can generate data for an industry or also for a private house.
+
 Below there is a brief description of the phases and the corresponding files.
 
 ## Phase 1

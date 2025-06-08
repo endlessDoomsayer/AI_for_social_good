@@ -104,14 +104,15 @@ class LocalSearchRecovery:
             "Tabu Search": {"solution": ts_result[0], "violations": ts_result[1], "time": ts_result[2]},
         }
 
-with open("optimal_schedule.json", "r") as f:
-    loaded_schedule_raw = json.load(f)
+def solve(M,N,data):
+    with open("optimal_schedule.json", "r") as f:
+        loaded_schedule_raw = json.load(f)
 
-# Original scheduling
-original_solution = {tuple(map(int, k.split(","))): v for k, v in loaded_schedule_raw.items()}
+    # Original scheduling
+    original_solution = {tuple(map(int, k.split(","))): v for k, v in loaded_schedule_raw.items()}
 
-data = get_modified_data()
-M_val, N_val = 4912, 45
+    data = get_modified_data()
+    M_val, N_val = 4912, 45
 
-lsr = LocalSearchRecovery(data, M_val, N_val)
-results = lsr.run_all(original_solution)
+    lsr = LocalSearchRecovery(data, M_val, N_val)
+    results = lsr.run_all(original_solution)

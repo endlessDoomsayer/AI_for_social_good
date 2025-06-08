@@ -1,11 +1,14 @@
 import _1_bin_search_scip
-import _1_glpk
+import _1_bin_search_scip_inverted
+import _1_scip
 import _2
 import _3_local_search
-import _3_milp
+import _3_scip
 import _4_1_CSP_alternatives
 import _4_1_scip
-import _4_3_milp
+import _4_1_adapt
+import _4_3_scip
+
 from combine_data import get_data
 import pandas as pd
 import time
@@ -13,7 +16,6 @@ import sys
 
 
 def run_models_1(policies, days=7, date = "2018-01-01"):
-    
 
     output_file = f"results_model_1.txt"
     number_of_M_N_per_policy = {}  
@@ -23,14 +25,14 @@ def run_models_1(policies, days=7, date = "2018-01-01"):
         print(header)
         f.write(header)
 
+        day = pd.to_datetime(date)
+        data = get_data(number_of_days=days, day=day)
+
         for policy in policies:
 
             print_policy = f"\n-----------------------------------{policy}-----------------------------------\n"
             print(print_policy)
             f.write(print_policy)
-
-            day = pd.to_datetime(date)
-            data = get_data(number_of_days=days, day=day)
 
             start = time.time()
             if policy == '_1_bin_search_scip':
@@ -41,13 +43,22 @@ def run_models_1(policies, days=7, date = "2018-01-01"):
                     f.write(warning)
                     continue
 
-            elif policy == '_1_glpk':
-                M, N = _1_glpk.solve(data=data)
+            elif policy == '_1_scip':
+                M, N = _1_scip.solve(data=data)
                 if M is None or N is None:
                     warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
                     print(warning)
                     f.write(warning)
                     continue
+
+            elif policy == '_1_bin_search_scip_inverted':
+                M, N = _1_bin_search_scip_inverted.solve(data=data)
+                if M is None or N is None:
+                    warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
+                    print(warning)
+                    f.write(warning)
+                    continue
+
             else:
                 warning = f"Policy '{policy}' not correct.\n"
                 print(warning)
@@ -80,7 +91,7 @@ def run_models_1(policies, days=7, date = "2018-01-01"):
 
 
 
-def run_step_2(number_of_M_N, policies, number_of_days=7, date = "2018-01-01"):
+def run_step_2(number_of_M_N, policies, days=7, date = "2018-01-01"):
 
     output_file = f"results_step_2.txt"
     number_of_days_years_per_policy = {}
@@ -89,6 +100,8 @@ def run_step_2(number_of_M_N, policies, number_of_days=7, date = "2018-01-01"):
         header = f"----------------------------------- STEP 2 -----------------------------------\n"
         print(header)
         f.write(header)
+        day = pd.to_datetime(date)
+        data = get_data(number_of_days=days, day=day)
 
         for policy in policies:
 
@@ -96,11 +109,9 @@ def run_step_2(number_of_M_N, policies, number_of_days=7, date = "2018-01-01"):
             print(print_policy)
             f.write(print_policy)
 
-            day = pd.to_datetime(date)
-            data = get_data(number_of_days=number_of_days, day=day)
- 
+
             M, N = number_of_M_N[policy]
-            days, years = _2.print_sol(M, N, number_of_days, data=data)
+            days, years = _2.print_sol(M, N, days, data=data)
 
             result = f"Results for {policy}: Days={days}, year={years}\n"
             print(result)
@@ -115,7 +126,6 @@ def run_step_2(number_of_M_N, policies, number_of_days=7, date = "2018-01-01"):
 
 
 def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
-    
 
     output_file = f"results_model_3.txt"
     number_of_cost_M_N_per_policy = {}  
@@ -124,6 +134,8 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
         header = f"----------------------------------- MODEL 3 -----------------------------------\n"
         print(header)
         f.write(header)
+        day = pd.to_datetime(date)
+        data = get_data(days, day=day)
 
         for policy in policies:
 
@@ -131,8 +143,6 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
             print(print_policy)
             f.write(print_policy)
 
-            day = pd.to_datetime(date)
-            data = get_data(days, day=day)
 
             start = time.time()
             if policy == '_3_local_search':
@@ -142,8 +152,8 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
                     print(warning)
                     f.write(warning)
                     continue
-            elif policy == '_3_milp':
-                cost, M, N = _3_milp.solve(tot_number_of_days = tot_number_of_days, data=data)
+            elif policy == '_3_scip':
+                cost, M, N = _3_scip.solve(tot_number_of_days = tot_number_of_days, data=data)
                 if cost or M or N is None:
                     warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
                     print(warning)
@@ -195,10 +205,12 @@ def run_models_4(number_of_M_N_per_policy, days=1, date = "2018-01-01"):
             
             if policy == '_4_1_enhanced':
                 _4_1_CSP_alternatives.solve(M, N, data = data)
-            elif policy == '_4_1_lin_prog':
-                _4_1_lin_prog.solve(M, N, data = data)
-            elif policy == '_4_3_milp':
-                _4_3_milp.solve(M, N, data = data)
+            elif policy == '_4_1_adapt':
+                _4_1_adapt.solve(M, N, data = data)
+            elif policy == '_4_1_scip':
+                _4_1_scip.solve(M, N, data = data)
+            elif policy == '_4_3_scip':
+                _4_3_scip.solve(M, N, data = data)
             else:
                 warning = f"Policy '{policy}' not correct.\n"
                 print(warning)

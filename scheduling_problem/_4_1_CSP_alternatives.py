@@ -1,8 +1,5 @@
 from ortools.sat.python import cp_model
 import matplotlib.pyplot as plt
-import random
-import math
-from collections import defaultdict
 from combine_data import get_data
 import time
 import json
@@ -21,8 +18,16 @@ def get_activity_times(solver, x):
     activity_times = {}
     for (i, t, j), var in x.items():
         if solver.BooleanValue(var):
-            activity_times[(i, j)] = t
+            activity_times[(i,t, j)] = solver.value(x[i,t,j])
     return activity_times
+
+
+def print_solution(optimal_schedule):
+    # Convert tuple keys to strings
+    serializable_schedule = {f"{i},{t},{j}": x for (i, t, j), x in optimal_schedule.items()}
+
+    with open("optimal_schedule.json", "w") as f:
+        json.dump(serializable_schedule, f, indent=2)
 
 
 class CSPSolver:
@@ -57,10 +62,14 @@ class CSPSolver:
         y = {}
         for i in self.I:
             for j in self.J:
-                if j <= self.n_jobs[i]:
-                    for t in self.T:
+                for t in self.T:
+                    if j <= self.n_jobs[i]:
                         x[i, t, j] = model.NewBoolVar(f'x_{i}_{t}_{j}')
                         y[i, t, j] = model.NewBoolVar(f'y_{i}_{t}_{j}')
+                    else:
+                        # Fix variables for jobs that a machine can't do
+                        x[i, t, j] = model.NewIntVar(0, 0, f'x_{i}_{t}_{j}')
+                        y[i, t, j] = model.NewIntVar(0, 0, f'y_{i}_{t}_{j}')
 
         s = {t: model.NewIntVar(0, N_val * self.B, f's_{t}') for t in self.T}
 
@@ -83,12 +92,9 @@ class CSPSolver:
             if t == 1:
                 model.Add(s[t] == 0)
             else:
-                prev_sum = sum(
-                    M_val * self.p[tp] - sum(self.e[i] * x[i, tp, j] + self.f[i] * y[i, tp, j]
-                                             for i in self.I for j in self.J if j <= self.n_jobs[i])
-                    for tp in range(1, t)
-                )
-                model.Add(s[t] <= prev_sum)
+                consumption_prev = sum(self.e[i] * x[i, t - 1, j] + self.f[i] * y[i, t - 1, j]
+                                       for i in self.I for j in self.J if j <= self.n_jobs[i])
+                model.Add(s[t] == s[t - 1] + M_val * self.p[t] - consumption_prev)
 
         for t in self.T:
             model.Add(s[t] <= N_val * self.B)
@@ -160,8 +166,10 @@ class CSPSolver:
         for i in self.I:
             for j in self.J:
                 if j <= self.n_jobs[i]:
-                    for t in range(self.THRESHOLD_FOR_JOB_J_AND_I[(i, j)] + 1, self.T_MAX + 1):
-                        model.Add(x[i, t, j] == 0)
+                    threshold = self.THRESHOLD_FOR_JOB_J_AND_I.get((i, j), self.T_MAX)
+                    for t in range(threshold + 1, self.T_MAX + 1):
+                        if t in self.T:
+                            model.Add(x[i, t, j] == 0)
 
         # Job start constraints
         for i in self.I:
@@ -173,7 +181,7 @@ class CSPSolver:
 
     def standard_backtracking_solver(self, M_val, N_val):
         """Standard backtracking"""
-        print(f"Using Advanced Backtracking with MCV, LCV, Backjumping and No-good Learning for M={M_val}, N={N_val}")
+        print(f"Using Standard Backtracking for M={M_val}, N={N_val}")
 
         model = cp_model.CpModel()
 
@@ -365,16 +373,9 @@ class CSPSolver:
                     # A job can only start once
                     model.Add(sum(y[i, t, j] for t in self.T) <= 1)
 
-
-    def print_solution(self, optimal_schedule):
-        # Convert tuple keys to strings
-        serializable_schedule = {f"{i},{j}": t for (i, j), t in optimal_schedule.items()}
-
-        with open("optimal_schedule.json", "w") as f:
-            json.dump(serializable_schedule, f, indent=2)
-
     def solve_with_multiple_techniques(self, M_val, N_val):
         """Try multiple techniques and return all of them"""
+        import traceback
         techniques = [
             ("Standard Backtracking", self.standard_backtracking_solver),
             ("Constraint Propagation", self.constraint_propagation_solver),
@@ -390,12 +391,13 @@ class CSPSolver:
                 
                 print(f"Time taken for {name}: {end - start}")
                 if el:
-                    print(f"️✔️ {name} found a feasible solution!")
-                    self.print_solution(optimal)
+                    print(f"️Y {name} found a feasible solution!")
+                    print_solution(optimal)
                 else:
-                    print(f"❌ {name} did not find a feasible solution")
+                    print(f"X {name} did not find a feasible solution")
             except Exception as e:
-                print(f"❌ {name} failed with error: {e}")
+                print(f"X {name} failed with error")
+                print(traceback.format_exc())
 
         return True
 
@@ -422,20 +424,7 @@ def print_solution_enhanced(M_val, N_val, data):
     J = data["J"]
     T = data["T"]
     n_jobs = data["n_jobs"]
-    d = data["d"]
-    e = float_to_int_round(data["e"])
-    f = float_to_int_round(data["f"])
-    c_b = data["c_b"]
-    c_p = data["c_p"]
-    c = data["c"]
-    p = float_to_int_round(data["p"])
-    mmm = data["mmm"]
-    silent_periods = data["silent_periods"]
-    M_shared = data["M_shared"]
-    M_dependencies = data["M_dependencies"]
     B = data["B"]
-    T_MAX = data["T_MAX"]
-    THRESHOLD_FOR_JOB_J_AND_I = data["THRESHOLD_FOR_JOB_J_AND_I"]
     MACHINES = data["MACHINES"]
 
     # Create model for solution extraction
@@ -500,7 +489,6 @@ def print_solution_enhanced(M_val, N_val, data):
         plt.tight_layout()
         plt.savefig('enhanced_schedule_visualization.svg', format="svg")
         print("\nEnhanced schedule visualization saved as 'enhanced_schedule_visualization.svg'")
-        #plt.show()
     else:
         print("Could not extract detailed solution for visualization.")
 
@@ -513,54 +501,12 @@ def solve(M_val, N_val, data = get_data()):
         ("Enhanced CSP Solver", lambda: find_min_enhanced(M_val, N_val, data)),
     ]
 
-    results = {}
-
     for name, technique in techniques:
         print(f"\n{'=' * 50}")
         print(f"TRYING: {name}")
         print(f"{'=' * 50}")
 
-        try:
-            import time
-            start_time = time.time()
-            success = technique()
-            end_time = time.time()
-
-            results[name] = {
-                'success': success,
-                'time': end_time - start_time
-            }
-
-            if success:
-                print(f"{name} found a solution in {end_time - start_time:.2f} seconds")
-            else:
-                print(f"{name} could not find a solution ({end_time - start_time:.2f} seconds)")
-
-        except Exception as e:
-            results[name] = {
-                'success': False,
-                'error': str(e),
-                'time': 0
-            }
-            print(f"ERROR in {name}: {e}")
-
-    # Summary
-    print(f"\n{'=' * 60}")
-    print("FINAL RESULTS SUMMARY")
-    print(f"{'=' * 60}")
-
-    successful_techniques = [name for name, result in results.items() if result['success']]
-
-    if successful_techniques:
-        print("Successful techniques:")
-        for name in successful_techniques:
-            print(f"   - {name} ({results[name]['time']:.2f}s)")
-    else:
-        print("No technique found a feasible solution")
-
-    print(f"\n{'=' * 60}")
-
-    return len(successful_techniques) > 0
+        technique()
 
 if __name__ == "__main__":
-    solve(4912, 45)
+    solve(2491, 166)

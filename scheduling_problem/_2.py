@@ -6,15 +6,12 @@ def print_sol(M,N, number_of_days = 1, data = get_data()):
     print("N:", N)
 
     I = data["I"]
-    J = data["J"]
-    T = data["T"]
     n_jobs = data["n_jobs"]
     d = data["d"]
     e = data["e"]
     f = data["f"]
     c_b = data["c_b"]
     c_p = data["c_p"]
-    B = data["B"]
     c_e = data["c_e"]
 
     # Calculations

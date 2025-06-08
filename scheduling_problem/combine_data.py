@@ -112,7 +112,7 @@ def get_data(number_of_days = 1, day = pd.Timestamp("2018-02-19")):
 
     MACHINES = len(machine_names) # Number of machines
     MAX_JOB_N = number_of_days*2  # Maximum number of jobs per machine
-    T_MAX = 24*number_of_days-1  # Number of time periods (e.g., 48 half-hours in a day) TODO: try for 5 days and for all the seasons
+    T_MAX = 24*number_of_days-1  # Number of time periods (e.g., 48 half-hours in a day)
     
     print(f"Machine number:", MACHINES)
     print("Max jobs per machine:", MAX_JOB_N)
@@ -155,6 +155,78 @@ def get_data(number_of_days = 1, day = pd.Timestamp("2018-02-19")):
 
     # 2. SOLAR PANELS
     get_solar_production(data,day, end_date)
+
+    # 3. GENERATED DATA
+    generate_data(data, number_of_days)
+
+    return data
+
+
+def get_modified_data(number_of_days=1, day=pd.Timestamp("2018-02-19")):
+    end_date = day + pd.to_timedelta(number_of_days - 1, unit='D')
+
+    print(f"Number of days: {number_of_days}")
+    print(f"Start date: {day}")
+    print(f"End date: {end_date}")
+
+    data = {}
+
+    datasetjson_path = '../nilm/output/IMDELD.json'
+    datasetjson = Dataset('IMDELD', datasetjson_path)
+    datasetjson.load()
+
+    # 1. NILM DATA
+    print("--------------------------------------\nNILM DATA\n")
+
+    machine_names = datasetjson.get_machine_names()
+    machine_names = machine_names[:-2]  # delete last 2 machines since we don't have any data on the power
+    print(f"Machine names: {machine_names}")
+
+    MACHINES = len(machine_names)  # Number of machines
+    MAX_JOB_N = number_of_days * 2  # Maximum number of jobs per machine
+    T_MAX = 24 * number_of_days - 1  # Number of time periods (e.g., 48 half-hours in a day)
+
+    print(f"Machine number:", MACHINES)
+    print("Max jobs per machine:", MAX_JOB_N)
+    print("Max time period:", T_MAX)
+
+    data["T_MAX"] = T_MAX
+    data["MACHINES"] = MACHINES
+
+    # Define sets
+    I = list(range(1, MACHINES + 1))  # machines
+    T = list(range(1, T_MAX + 1))  # time periods
+    J = list(range(1, MAX_JOB_N + 1))  # jobs
+
+    data["T"] = T
+    data["I"] = I
+    data["J"] = J
+
+    # Energy parameters
+    # e_i: energy consumption when machine i is running
+    # start_time, end_time = datasetjson.get_start_end_time()
+
+    day_data = datasetjson.get_data_start_end(day, end_date)
+
+    e = {}
+    for idx, machine_name in enumerate(machine_names, start=1):
+        avg_power = datasetjson.get_average_power_usage(machine_name, min(day_data.keys()), max(day_data.keys()))
+        e[idx] = avg_power
+    print("e =", e)
+    data["e"] = e
+
+    # f_i: additional energy consumed when machine i starts
+    f = {i: int(e[i] * (1 / 6)) for i in e}
+    print("f =", f)
+    data["f"] = f
+
+    # d_i: duration of job i on machine i
+    d = {1: 6, 2: 6, 3: 6, 4: 6, 5: 12, 6: 12}
+    print("d =", d)
+    data["d"] = d
+
+    # 2. SOLAR PANELS
+    get_solar_production(data, day, end_date)
 
     # 3. GENERATED DATA
     generate_data(data, number_of_days)

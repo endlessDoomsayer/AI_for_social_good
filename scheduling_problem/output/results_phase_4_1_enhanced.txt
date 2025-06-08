@@ -1,0 +1,64 @@
+
+-----------------------------------_4_1_enhanced-----------------------------------
+
+Number of days: 1
+Start date: 2018-02-19 00:00:00
+End date: 2018-02-19 00:00:00
+Loaded dataset IMDELD with 1091 entries
+--------------------------------------
+NILM DATA
+
+Machine names: ['Pelletizer I', 'Pelletizer II', 'Double-pole Contactor I', 'Double-pole Contactor II', 'Exhaust Fan I', 'Exhaust Fan II']
+Machine number: 6
+Max jobs per machine: 2
+Max time period: 23
+e = {1: 93882.3, 2: 73544.6, 3: 3517.64, 4: 3503.99, 5: 3338.27, 6: 8929.86}
+f = {1: 15647, 2: 12257, 3: 586, 4: 583, 5: 556, 6: 1488}
+d = {1: 6, 2: 6, 3: 6, 4: 6, 5: 12, 6: 12}
+Model loaded successfully from: C:\Users\vison\OneDrive\Desktop\Progetti\AI_for_social_good\weather_pv_conversion\output\model\best_estimator_model.pkl
+Model expects features (order from model.feature_names_in_): ['temperature_2m', 'precipitation', 'wind_speed_10m', 'snowfall', 'rain', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'shortwave_radiation', 'direct_radiation', 'diffuse_radiation', 'direct_normal_irradiance', 'global_tilted_irradiance', 'terrestrial_radiation']
+Scaler loaded successfully from: C:\Users\vison\OneDrive\Desktop\Progetti\AI_for_social_good\weather_pv_conversion\output\model\scaler.pkl
+Scaler was fit on features (order from scaler.feature_names_in_): ['cloud_cover', 'cloud_cover_high', 'cloud_cover_low', 'cloud_cover_mid', 'diffuse_radiation', 'direct_normal_irradiance', 'direct_radiation', 'global_tilted_irradiance', 'rain', 'shortwave_radiation', 'snowfall', 'temperature_2m', 'terrestrial_radiation', 'wind_speed_10m']
+
+--------------------------------------
+SOLAR PANELS
+
+Fetching weather data from 2018-02-19 to 2018-02-19...
+Filtered data for prediction: 23 rows.
+Applying loaded scaler...
+Data scaled successfully.
+Making predictions with 15 features (SVR model order): ['temperature_2m', 'precipitation', 'wind_speed_10m', 'snowfall', 'rain', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'shortwave_radiation', 'direct_radiation', 'diffuse_radiation', 'direct_normal_irradiance', 'global_tilted_irradiance', 'terrestrial_radiation']
+
+
+Solar production in the days: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 50.18801669482668, 11: 122.0793705527417, 12: 134.64046145309192, 13: 142.757280842964, 14: 145.05942301790105, 15: 107.36467013291019, 16: 91.96295015240437, 17: 68.56685824587123, 18: 43.99346476631278, 19: 0, 20: 0, 21: 0, 22: 0, 23: 0}
+
+--------------------------------------
+Generated Parameters: 
+
+Cost per battery (c_b): 2530
+Cost per power unit (c_p): 415.0
+Cost of energy taken from outside (c_e): 0.00016053
+Battery capacity (B): 5000
+Max energy available (mmm): {1: 961183, 2: 913229, 3: 873541, 4: 863905, 5: 977587, 6: 899809, 7: 946443, 8: 800257, 9: 849045, 10: 875214, 11: 967700, 12: 982898, 13: 857799, 14: 834146, 15: 946482, 16: 801609, 17: 920281, 18: 948546, 19: 853510, 20: 919428, 21: 930109, 22: 909051, 23: 932596}
+Required jobs per machine (n_jobs): {1: 2, 2: 2, 3: 1, 4: 1, 5: 1, 6: 1}
+Machine cooldown periods (c): {1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2}
+Machine dependencies: []
+Shared resource groups: []
+Silent periods: {}
+Time limit for each job (THRESHOLD_FOR_JOB_J_AND_I): {(1, 1): 24, (1, 2): 48, (2, 1): 24, (2, 2): 48, (3, 1): 24, (3, 2): 48, (4, 1): 24, (4, 2): 48, (5, 1): 24, (5, 2): 48, (6, 1): 24, (6, 2): 48}
+--------------------------------------
+
+=== Solving CSP with M=2491, N=141 using ALL techniques ===
+
+
+==================================================
+TRYING: Enhanced CSP Solver
+==================================================
+
+--- Trying Standard Backtracking ---
+Using Standard Backtracking for M=2491, N=141
+Number of conflicts: 30
+Number of branches: 875
+Wall time: 0.10s
+Time taken for Standard Backtracking: 0.1631021499633789
+X Standard Backtracking failed with error

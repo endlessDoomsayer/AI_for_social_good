@@ -355,12 +355,12 @@ class CSPSolver:
                 
                 print(f"Time taken for {name}: {end - start}")
                 if el:
-                    print(f"️Y {name} found a feasible solution!")
+                    print(f"{name} found a feasible solution")
                     print_solution(optimal)
                 else:
-                    print(f"X {name} did not find a feasible solution")
+                    print(f"{name} did not find a feasible solution")
             except Exception as e:
-                print(f"X {name} failed with error")
+                print(f"{name} failed with error")
                 print(traceback.format_exc())
 
         return True

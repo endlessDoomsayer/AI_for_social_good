@@ -5,9 +5,6 @@ system.
 To see the full specifications of the phases and the corresponding models, open the 
 `main_script.ipynb` file.
 
-`combine_data.py` is the script that takes the data from NILM and from the solar panels predictor and generates all the data.
-It can generate data for an industry or also for a private house.
-
 Below there is a brief description of the phases and the corresponding files.
 
 ## Phase 1
@@ -51,3 +48,9 @@ Simulated Annealing, that take as input a scheduling and perform a local search 
 ### 4.3 
 Finds the optimal scheduling if we can use imported energy.
 `_4_3_scip.py` solves it as a MIP model using SCIP.
+
+## Utilities
+The project includes several utility components:
+- `combine_data.py`: this script merges data from NILM and the solar panel predictor to generate comprehensive datasets. It can produce data for both industrial and residential scenarios, including modified versions.
+- `output/` folder: contains sample results generated using example data.
+- `main.py`: this script executes the four processing phases sequentially, saving the results to the appropriate files. It also leverages `run_models.py` during execution.

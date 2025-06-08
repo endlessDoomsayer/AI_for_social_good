@@ -40,18 +40,17 @@ def add_constraints(solver, data, M, N, x, y, s):
     # 2. Storage computation constraint
     for t in T:
         if t == 1:
-            solver.Add(s[t] == 0)  # Assume starting with empty storage
+            solver.Add(s[t] == 0)
         else:
-            # s[t] = s[t-1] + production[t-1] - consumption[t-1]
             constraint = solver.Constraint(M * p[t-1], M * p[t-1])
             constraint.SetCoefficient(s[t], 1)
             constraint.SetCoefficient(s[t - 1], -1)
 
-            # Add consumption from previous period
             for i in I:
                 for j in J:
-                    constraint.SetCoefficient(x[i, t - 1, j], e[i])  # Running consumption
-                    constraint.SetCoefficient(y[i, t - 1, j], f[i])  # Startup consumption
+                    constraint.SetCoefficient(x[i, t - 1, j], e[i])
+                    constraint.SetCoefficient(y[i, t - 1, j], f[i])
+
     # 3. Battery capacity constraint
     for t in T:
         constraint = solver.Constraint(-solver.infinity(), N*B)
@@ -88,7 +87,7 @@ def add_constraints(solver, data, M, N, x, y, s):
 
     # 8. Silent periods for machines (some machines must be off at specific times)
     for i in silent_periods:
-        if i in I:  # Make sure machine i is in our set
+        if i in I:
             for t in silent_periods[i]:
                 if t in T and t <= T_MAX:
                     for j in J:
@@ -98,7 +97,7 @@ def add_constraints(solver, data, M, N, x, y, s):
     # 9. Shared resource constraint
     for t in T:
         for group in M_shared:
-            machines_in_group = [i for i in group if i in I]  # Ensure the machines are in our defined set
+            machines_in_group = [i for i in group if i in I]
             if machines_in_group:
                 constraint = solver.Constraint(-solver.infinity(), 1)
                 for i in machines_in_group:
@@ -127,7 +126,7 @@ def add_constraints(solver, data, M, N, x, y, s):
 
     # 11. Dependency constraint
     for (k, kp1) in M_dependencies:
-        if k in I and kp1 in I:  # Ensure both machines are in our defined set
+        if k in I and kp1 in I:
             for t in T:
                 for j in J:
                     if j <= n_jobs.get(k, 0) and j <= n_jobs.get(kp1, 0):  # Both machines must be able to do job j
@@ -153,7 +152,7 @@ def add_constraints(solver, data, M, N, x, y, s):
     # 13. Job must be completed before threshold
     for i in I:
         for j in J:
-            if j <= n_jobs[i]:  # Only apply for required jobs
+            if j <= n_jobs[i]:
                 threshold = THRESHOLD_FOR_JOB_J_AND_I.get((i, j), T_MAX)
                 for t in range(threshold + 1, T_MAX + 1):
                     if t in T:
@@ -281,9 +280,8 @@ def print_solution(M,N,data,filename):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig("schedule_visualization_"+filename+".png", format="png", dpi=300, bbox_inches='tight')
-        print("\nSchedule visualization saved as 'schedule_visualization_"+filename+".svg")
-        #plt.show()
+        plt.savefig("output/schedule_visualization_"+filename+".png", format="png", dpi=300, bbox_inches='tight')
+        print("\nSchedule visualization saved as 'output/schedule_visualization_"+filename+".png")
 
         # Print solution statistics
         print(f"\nSolution Statistics:")
@@ -303,7 +301,7 @@ def print_solution(M,N,data,filename):
         print(f"Total constraints: {solver.NumConstraints()}")
         
 def solve(M, N, data = combine_data.get_data()):
-    print_solution(M,N,data,"4_1_lin_prog")
+    print_solution(M,N,data,"4_1_scip")
 
 if __name__ == "__main__":
     solve(2491,141)

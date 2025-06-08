@@ -30,8 +30,8 @@ class LocalSearchRecovery:
 
     def parse_solution(self, solution_dict):
         """Convert solution dictionary to proper format and compute y variables"""
-        x = {}  # x[i,t,j] = 1 if machine i runs job j at time t
-        y = {}  # y[i,t,j] = 1 if machine i starts job j at time t
+        x = {}
+        y = {}
 
         # Initialize all variables to 0
         for i in self.I:
@@ -89,7 +89,7 @@ class LocalSearchRecovery:
 
         return storage
 
-    def evaluate_all_constraints(self, x, y, first=False):
+    def evaluate_all_constraints(self, x, y):
         """Evaluate all constraint violations with proper weights"""
         violations = 0
         violation_details = {}
@@ -102,13 +102,9 @@ class LocalSearchRecovery:
         for t in self.T:
             # Storage cannot be negative
             if storage[t] < 0:
-                if first:
-                    print("Negativeeee at time ", t, " there is storage ", storage[t])
                 storage_violations += abs(storage[t]) * 10  # High penalty
             # Storage cannot exceed battery capacity
             if storage[t] > self.N_val * self.B:
-                if first:
-                    print("Too muchhhh")
                 storage_violations += (storage[t] - self.N_val * self.B) * 10
 
         violation_details['storage'] = storage_violations
@@ -250,12 +246,10 @@ class LocalSearchRecovery:
 
         return violations, violation_details
 
-    def evaluate(self, solution_dict, first = False):
+    def evaluate(self, solution_dict):
         """Evaluate constraint violations for a solution"""
         x, y = self.parse_solution(solution_dict)
-        violations, details = self.evaluate_all_constraints(x, y, first=first)
-        if (first):
-            print(details)
+        violations, details = self.evaluate_all_constraints(x, y)
         return violations
 
     def get_neighbor_move_job(self, solution_dict):
@@ -393,7 +387,7 @@ class LocalSearchRecovery:
         """Simulated Annealing algorithm"""
         current = deepcopy(solution)
         best = deepcopy(solution)
-        best_cost = current_cost = self.evaluate(current, first=True)
+        best_cost = current_cost = self.evaluate(current)
         T = T_init
 
         print(f"SA Initial cost: {current_cost}")
@@ -525,7 +519,6 @@ def solve(M, N, data=get_modified_data()):
 
         print(f"Loaded {len(loaded_schedule_raw)} job assignments")
 
-        # The JSON format is already correct - no need to convert tuple keys
         original_solution = loaded_schedule_raw
 
         lsr = LocalSearchRecovery(data, M, N)

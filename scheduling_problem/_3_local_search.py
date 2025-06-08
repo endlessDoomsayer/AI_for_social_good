@@ -64,8 +64,8 @@ class LocalSearchSCIPSolver:
             N_var = solver.IntVar(0, solver.infinity(), 'N')
 
         # Binary variables for machine operations
-        x = {}  # 1 if machine i runs job j at time t
-        y = {}  # 1 if machine i starts job j at time t
+        x = {}
+        y = {}
         for i in self.I:
             for j in self.J:
                 for t in self.T:
@@ -128,16 +128,14 @@ class LocalSearchSCIPSolver:
         # 2. Storage computation constraint
         for t in self.T:
             if t == 1:
-                solver.Add(s[t] == 0)  # Assume starting with empty storage
+                solver.Add(s[t] == 0)
             else:
-                # s[t] = s[t-1] + production[t-1] - consumption[t-1]
                 constraint = solver.Constraint(0, 0)
                 constraint.SetCoefficient(s[t], 1)
                 constraint.SetCoefficient(s[t - 1], -1)
                 constraint.SetCoefficient(M_var, -self.p[t - 1])
                 constraint.SetCoefficient(z[t - 1], -1)
 
-                # Add consumption from previous period
                 for i in self.I:
                     for j in self.J:
                         constraint.SetCoefficient(x[i, t - 1, j], self.e[i])
@@ -276,10 +274,10 @@ class LocalSearchSCIPSolver:
             print(f"Initial solution found: M={initial_M}, N={initial_N}, Objective={obj_value:.2f}")
             return initial_M, initial_N, obj_value, solver
         else:
-            # If initial solution fails, try with even higher values
+            # If initial solution fails, try with really high values
             print("Initial solution failed, trying with higher values...")
-            initial_M = 4000
-            initial_N = 500
+            initial_M = 5000
+            initial_N = 5000
             solver = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
             obj_value, status = self.solve_with_timeout(solver, timeout=180)
 
@@ -460,12 +458,10 @@ class LocalSearchSCIPSolver:
             ax4.grid(True)
 
         plt.tight_layout()
-        plt.savefig('local_search_scip_results.png', format="png", dpi=300, bbox_inches='tight')
-        print("Results visualization saved as 'local_search_scip_results.png'")
-        # plt.show()
+        plt.savefig('output/local_search_3_scip_results.png', format="png", dpi=300, bbox_inches='tight')
+        print("Results visualization saved as 'output/local_search_3_scip_results.png'")
 
 
-# Usage example
 def solve(number_of_days=1, tot_number_of_days=3837):
     solver = LocalSearchSCIPSolver(number_of_days=number_of_days, tot_number_of_days=tot_number_of_days)
 

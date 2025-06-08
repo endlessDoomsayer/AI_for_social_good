@@ -14,13 +14,14 @@ import pandas as pd
 import time
 import sys
 
+output_folder = "output/"
 
 def run_models_1(policies, days=7, date = "2018-01-01"):
 
     output_file = f"results_phase_1.txt"
     number_of_M_N_per_policy = {}  
 
-    with open(output_file, "w") as f:
+    with open(output_folder+output_file, "w") as f:
         header = f"----------------------------------- MODEL 1 -----------------------------------\n"
         print(header)
         f.write(header)
@@ -86,7 +87,7 @@ def run_models_1(policies, days=7, date = "2018-01-01"):
             print(f"{policy}: M={M}, N={N}")
             f.write(f"{policy}: M={M}, N={N}\n")
 
-    print(f"\noutput_file_saved '{output_file}'")
+    print(f"\noutput_file_saved '{output_folder+output_file}'")
     return number_of_M_N_per_policy
 
 
@@ -96,7 +97,7 @@ def run_step_2(number_of_M_N, policies, days=7, date = "2018-01-01"):
     output_file = f"results_phase_2.txt"
     number_of_days_years_per_policy = {}
 
-    with open(output_file, "w") as f:
+    with open(output_folder+output_file, "w") as f:
         header = f"----------------------------------- STEP 2 -----------------------------------\n"
         print(header)
         f.write(header)
@@ -120,7 +121,7 @@ def run_step_2(number_of_M_N, policies, days=7, date = "2018-01-01"):
             if policy not in number_of_days_years_per_policy:
                     number_of_days_years_per_policy[policy] = (daysss, years)
 
-        print(f"\noutput_file_saved '{output_file}'")
+        print(f"\noutput_file_saved '{output_folder+output_file}'")
         return number_of_days_years_per_policy
     
 
@@ -130,7 +131,7 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
     output_file = f"results_phase_3.txt"
     number_of_cost_M_N_per_policy = {}  
 
-    with open(output_file, "w") as f:
+    with open(output_folder+output_file, "w") as f:
         header = f"----------------------------------- MODEL 3 -----------------------------------\n"
         print(header)
         f.write(header)
@@ -186,7 +187,7 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
             print(f"{policy}: cost={cost}, M={M}, N={N}")
             f.write(f"{policy}: cost={cost}, M={M}, N={N}\n")
 
-    print(f"\noutput_file_saved '{output_file}'")
+    print(f"\noutput_file_saved '{output_folder+output_file}'")
     return number_of_cost_M_N_per_policy
 
 
@@ -197,7 +198,7 @@ def run_models_4(number_of_M_N_per_policy, days=1, date = "2018-01-01"):
         print(f"Trying {policy} with M={M} and N={N}")
 
         original_stdout = sys.stdout
-        with open(f"results_phase{policy}.txt", "w") as f:
+        with open(f"{output_folder}results_phase{policy}.txt", "w") as f:
             
             sys.stdout = f  
             print_policy = f"\n-----------------------------------{policy}-----------------------------------\n"

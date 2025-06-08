@@ -2,6 +2,8 @@ from combine_data import get_data
 from _4_1_scip import *
 import time
 
+# Binary search on N and M to find minimum numbers to have feasibility without external energy
+
 def binary_search_M(min_N, max_M, data, is_feasible):
     """
     For a fixed N, binary search to find the minimum feasible M
@@ -37,13 +39,10 @@ def binary_search_N(max_N, max_M, data, is_feasible):
     return best_NM
 
 def solve(data = get_data()):
-    # Define the search bounds for M and N
+    # Define the search bounds for M and N based on external constraints
 
     biggestM = 10000
     biggestN = 10000
-
-   
-    
     
     start = time.time()
     result = binary_search_N(biggestN, biggestM, data, find_min)

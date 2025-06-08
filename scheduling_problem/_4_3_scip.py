@@ -33,8 +33,8 @@ def solve(M, N, data=get_data(), max_time = -1):
             return
 
     # Variables
-    x = {}  # 1 if machine i runs job j at time t
-    y = {}  # 1 if machine i starts job j at time t
+    x = {}
+    y = {}
     for i in I:
         for j in J:
             for t in T:
@@ -43,7 +43,7 @@ def solve(M, N, data=get_data(), max_time = -1):
 
     # Energy stored at time t
     s = {t: solver.NumVar(0, solver.infinity(), f's_{t}') for t in T}
-    z = {t: solver.NumVar(0, solver.infinity(), f'z_{t}') for t in T}  # Deficit variable
+    z = {t: solver.NumVar(0, solver.infinity(), f'z_{t}') for t in T}
 
     # Fix variables for jobs that a machine can't do
     for i in I:
@@ -74,19 +74,17 @@ def solve(M, N, data=get_data(), max_time = -1):
     # 2. Storage computation constraint
     for t in T:
         if t == 1:
-            solver.Add(s[t] == 0)  # Assume starting with empty storage
+            solver.Add(s[t] == 0)
         else:
-            # s[t] = s[t-1] + production[t-1] - consumption[t-1]
             constraint = solver.Constraint(M*p[t-1], M*p[t-1])
             constraint.SetCoefficient(s[t], 1)
             constraint.SetCoefficient(s[t - 1], -1)
             constraint.SetCoefficient(z[t-1], -1)
 
-            # Add consumption from previous period
             for i in I:
                 for j in J:
-                    constraint.SetCoefficient(x[i, t - 1, j], e[i])  # Running consumption
-                    constraint.SetCoefficient(y[i, t - 1, j], f[i])  # Startup consumption
+                    constraint.SetCoefficient(x[i, t - 1, j], e[i])
+                    constraint.SetCoefficient(y[i, t - 1, j], f[i])
 
     # 3. Battery capacity constraint
     for t in T:
@@ -125,7 +123,7 @@ def solve(M, N, data=get_data(), max_time = -1):
 
     # 8. Silent periods for machines (some machines must be off at specific times)
     for i in silent_periods:
-        if i in I:  # Make sure machine i is in our set
+        if i in I:
             for t in silent_periods[i]:
                 if t in T and t <= T_MAX:
                     for j in J:
@@ -135,7 +133,7 @@ def solve(M, N, data=get_data(), max_time = -1):
     # 9. Shared resource constraint
     for t in T:
         for group in M_shared:
-            machines_in_group = [i for i in group if i in I]  # Ensure the machines are in our defined set
+            machines_in_group = [i for i in group if i in I]
             if machines_in_group:
                 constraint = solver.Constraint(-solver.infinity(), 1)
                 for i in machines_in_group:
@@ -164,7 +162,7 @@ def solve(M, N, data=get_data(), max_time = -1):
 
     # 11. Dependency constraint
     for (k, kp1) in M_dependencies:
-        if k in I and kp1 in I:  # Ensure both machines are in our defined set
+        if k in I and kp1 in I:
             for t in T:
                 for j in J:
                     if j <= n_jobs.get(k, 0) and j <= n_jobs.get(kp1, 0):  # Both machines must be able to do job j
@@ -190,11 +188,11 @@ def solve(M, N, data=get_data(), max_time = -1):
     # 13. Job must be completed before threshold
     for i in I:
         for j in J:
-            if j <= n_jobs[i]:  # Only apply for required jobs
+            if j <= n_jobs[i]:
                 threshold = THRESHOLD_FOR_JOB_J_AND_I.get((i, j), T_MAX)
                 for t in range(threshold + 1, T_MAX + 1):
                     if t in T:
-                        x[i, t, j].SetBounds(0, 0)  # Fix to 0
+                        x[i, t, j].SetBounds(0, 0)
 
     # Set solver parameters
     if max_time != -1:
@@ -284,8 +282,8 @@ def solve(M, N, data=get_data(), max_time = -1):
         ax3.set_title('Energy Deficit (z_t)')
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_4_3_scip.png', format="png")
-        print("\nSchedule visualization saved as 'schedule_visualization_4_3_scip.png'")
+        plt.savefig('output/schedule_visualization_4_3_scip.png', format="png")
+        print("\nSchedule visualization saved as 'output/schedule_visualization_4_3_scip.png'")
 
         # plt.show()
     else:

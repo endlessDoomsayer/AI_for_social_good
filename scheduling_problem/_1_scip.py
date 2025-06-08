@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from combine_data import get_data
 import time
 
+# Solves at the optimum the first phase
 
 def solve(data=get_data()):
     I = data["I"]
@@ -75,15 +76,13 @@ def solve(data=get_data()):
     # 2. Storage computation constraint
     for t in T:
         if t == 1:
-            solver.Add(s[t] == 0)  # Assume starting with empty storage
+            solver.Add(s[t] == 0)
         else:
-            # s[t] = s[t-1] + production[t-1] - consumption[t-1]
             constraint = solver.Constraint(0, 0)
             constraint.SetCoefficient(s[t], 1)
             constraint.SetCoefficient(s[t - 1], -1)
             constraint.SetCoefficient(M_var, -p[t-1])
 
-            # Add consumption from previous period
             for i in I:
                 for j in J:
                     constraint.SetCoefficient(x[i, t - 1, j], e[i])  # Running consumption
@@ -94,9 +93,6 @@ def solve(data=get_data()):
         constraint = solver.Constraint(-solver.infinity(), 0)
         constraint.SetCoefficient(s[t], 1)
         constraint.SetCoefficient(N_var, -B)
-
-        #constraint = solver.Constraint(-solver.infinity(), 0)
-        #constraint.SetCoefficient(s[t], -1)
 
 
     # 4. Each job must run for required duration
@@ -131,7 +127,7 @@ def solve(data=get_data()):
 
     # 8. Silent periods for machines (some machines must be off at specific times)
     for i in silent_periods:
-        if i in I:  # Make sure machine i is in our set
+        if i in I:
             for t in silent_periods[i]:
                 if t in T and t <= T_MAX:
                     for j in J:
@@ -141,7 +137,7 @@ def solve(data=get_data()):
     # 9. Shared resource constraint
     for t in T:
         for group in M_shared:
-            machines_in_group = [i for i in group if i in I]  # Ensure the machines are in our defined set
+            machines_in_group = [i for i in group if i in I]
             if machines_in_group:
                 constraint = solver.Constraint(-solver.infinity(), 1)
                 for i in machines_in_group:
@@ -170,10 +166,10 @@ def solve(data=get_data()):
 
     # 11. Dependency constraint
     for (k, kp1) in M_dependencies:
-        if k in I and kp1 in I:  # Ensure both machines are in our defined set
+        if k in I and kp1 in I:
             for t in T:
                 for j in J:
-                    if j <= n_jobs.get(k, 0) and j <= n_jobs.get(kp1, 0):  # Both machines must be able to do job j
+                    if j <= n_jobs.get(k, 0) and j <= n_jobs.get(kp1, 0):
                         if t == 1:
                             solver.Add(y[kp1, t, j] == 0)  # Cannot start dependent job at first time period
                         else:
@@ -196,11 +192,11 @@ def solve(data=get_data()):
     # 13. Job must be completed before threshold
     for i in I:
         for j in J:
-            if j <= n_jobs[i]:  # Only apply for required jobs
+            if j <= n_jobs[i]:
                 threshold = THRESHOLD_FOR_JOB_J_AND_I.get((i, j), T_MAX)
                 for t in range(threshold + 1, T_MAX + 1):
                     if t in T:
-                        x[i, t, j].SetBounds(0, 0)  # Fix to 0
+                        x[i, t, j].SetBounds(0, 0)
 
     # Solve the model
     print("Solving the model...")
@@ -236,7 +232,7 @@ def solve(data=get_data()):
         for i in I:
             print(f"\nMachine {i} Schedule:")
             for j in J:
-                if j <= n_jobs[i]:  # Only check feasible jobs
+                if j <= n_jobs[i]:
                     start_times = [t for t in T if y[i, t, j].solution_value() > 0.5]
                     operative_times = [t for t in T if x[i, t, j].solution_value() > 0.5]
                     if start_times:
@@ -247,7 +243,7 @@ def solve(data=get_data()):
         # Print energy storage levels
         storage_values = [s[t].solution_value() for t in T]
         print("\nStorage Levels:")
-        for t in range(1, T_MAX + 1):  # Show first 10 time periods for brevity
+        for t in range(1, T_MAX + 1):
             print(f"  t={t}: {s[t].solution_value():.2f}")
 
         # Create visualization of the schedule
@@ -265,13 +261,6 @@ def solve(data=get_data()):
         ax1.set_yticks(range(0, MACHINES))
         ax1.set_yticklabels([f'Machine {i}' for i in I])
         ax1.set_title('Machine Schedule')
-        # Create legend for jobs that actually exist
-        legend_jobs = set()
-        for i in I:
-            for j in J:
-                if j <= n_jobs[i]:
-                    legend_jobs.add(j)
-        ax1.legend([f'Job {j}' for j in sorted(legend_jobs)], loc='upper right')
 
         # Plot energy storage
         ax2.plot(T, storage_values, marker='o', linestyle='-', markersize=4)
@@ -283,8 +272,8 @@ def solve(data=get_data()):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_1_scip.png', format="png")
-        print("\nSchedule visualization saved as 'schedule_visualization_1_scip.png'")
+        plt.savefig('output/schedule_visualization_1_scip.png')
+        print("\nSchedule visualization saved as 'output/schedule_visualization_1_scip.png'")
 
         # Print solution statistics
         print(f"\nSolution Statistics:")

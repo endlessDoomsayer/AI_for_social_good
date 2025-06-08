@@ -2,6 +2,8 @@ from combine_data import get_data
 from _4_1_scip import *
 import time
 
+# Binary search on N and M to find minimum numbers to have feasibility without external energy
+
 def binary_search_N(min_M, max_N, data, is_feasible):
     """
     For a fixed M, binary search to find the minimum feasible N
@@ -30,14 +32,15 @@ def binary_search_M(max_M, max_N, data, is_feasible):
         min_N = binary_search_N(mid_M, max_N, data, is_feasible)
         if min_N is not None:
             best_MN = (mid_M, min_N)
-            high = mid_M - 1  # Try to minimize M further
+            high = mid_M - 1
         else:
             low = mid_M + 1
 
     return best_MN
 
 def solve(data = get_data()):
-    # Define the search bounds for M and N
+    # Define the search bounds for M and N.
+    # These are defined by some external constraints like the space required for the panels
     biggestM = 10000
     biggestN = 10000
     

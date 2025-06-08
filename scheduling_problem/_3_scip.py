@@ -304,8 +304,8 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=4011):
         ax3.set_title('Energy Deficit (z_t)')
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_model_3_scip.svg', format="svg")
-        print("\nSchedule visualization saved as 'schedule_visualization_model_3_scip.svg'")
+        plt.savefig('schedule_visualization_3_scip.svg', format="svg")
+        print("\nSchedule visualization saved as 'schedule_visualization_3_scip.svg'")
 
         return M_value, N_value, solver.Objective().Value()
 

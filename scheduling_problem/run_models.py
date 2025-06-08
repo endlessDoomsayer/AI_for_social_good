@@ -113,7 +113,7 @@ def run_step_2(number_of_M_N, policies, days=7, date = "2018-01-01"):
             M, N = number_of_M_N[policy]
             days, years = _2.print_sol(M, N, days, data=data)
 
-            result = f"Results for {policy}: Days={days}, year={years}\n"
+            result = f"Results for {policy} with M={M} and N={N}: Days={days}, year={years}\n"
             print(result)
             f.write(result)
 

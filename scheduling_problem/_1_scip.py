@@ -283,8 +283,8 @@ def solve(data=get_data()):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_1_scip.svg', format="svg")
-        print("\nSchedule visualization saved as 'schedule_visualization_1_scip.svg'")
+        plt.savefig('schedule_visualization_1_scip.png', format="png")
+        print("\nSchedule visualization saved as 'schedule_visualization_1_scip.png'")
 
         # Print solution statistics
         print(f"\nSolution Statistics:")

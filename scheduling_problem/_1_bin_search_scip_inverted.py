@@ -55,7 +55,8 @@ def solve(data = get_data()):
         print(f"Minimum feasible (N, M): {result}")
     else:
         print("No feasible (N, M) found in given bounds.")
-    print_solution(result[1],result[0],data,"1_scip")
+    print_solution(result[1],result[0],data,"1_bin_search_scip_inverted")
+    return result[1], result[0]
     
 if __name__ == "__main__":
     solve()

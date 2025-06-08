@@ -262,11 +262,11 @@ class LocalSearchSCIPSolver:
         except:
             return float('inf'), None
 
-    def get_initial_solution(self):
+    def get_initial_solution(self, number_of_days, tot_number_of_days):
         """Get initial solution with high M and N values"""
         print("Finding initial solution...")
 
-        initial_M, initial_N, obj_value = _3_scip.solve(5,1,3837)
+        initial_M, initial_N, obj_value = _3_scip.solve(5,number_of_days=number_of_days,tot_number_of_days=tot_number_of_days, filename = "_local")
 
         solver = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
         if solver is None:
@@ -289,13 +289,13 @@ class LocalSearchSCIPSolver:
             else:
                 raise Exception("Could not find initial feasible solution")
 
-    def local_search(self, max_iterations=50, timeout_per_solve=30):
+    def local_search(self, max_iterations, timeout_per_solve, number_of_days, tot_number_of_days):
         """Main local search algorithm"""
         print("Starting Local Search Optimization with SCIP...")
         start_time = time.time()
 
         # Get initial solution
-        current_M, current_N, current_obj, current_solver = self.get_initial_solution()
+        current_M, current_N, current_obj, current_solver = self.get_initial_solution(number_of_days=number_of_days, tot_number_of_days=tot_number_of_days)
 
         best_M, best_N, best_obj = current_M, current_N, current_obj
         best_solver = current_solver
@@ -460,19 +460,21 @@ class LocalSearchSCIPSolver:
             ax4.grid(True)
 
         plt.tight_layout()
-        plt.savefig('local_search_scip_results.svg', format="svg", dpi=300, bbox_inches='tight')
-        print("Results visualization saved as 'local_search_scip_results.svg'")
+        plt.savefig('local_search_scip_results.png', format="png", dpi=300, bbox_inches='tight')
+        print("Results visualization saved as 'local_search_scip_results.png'")
         # plt.show()
 
 
 # Usage example
-def solve(number_of_days=1, tot_number_of_days=4011):
+def solve(number_of_days=1, tot_number_of_days=3837):
     solver = LocalSearchSCIPSolver(number_of_days=number_of_days, tot_number_of_days=tot_number_of_days)
 
     # Run local search
     best_M, best_N, best_obj, best_solver, improvements = solver.local_search(
         max_iterations=1000,
-        timeout_per_solve=45
+        timeout_per_solve=45,
+        number_of_days=number_of_days,
+        tot_number_of_days=tot_number_of_days
     )
 
     # Visualize results

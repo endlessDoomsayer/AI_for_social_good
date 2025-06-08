@@ -4,7 +4,7 @@ import time
 from combine_data import get_data
 
 
-def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_data()):
+def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_data(), filename = ""):
 
     # Round to 3 decimal places
     def float_to_round(float_list):
@@ -303,8 +303,8 @@ def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_dat
         ax3.set_title('Energy Deficit (z_t)')
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_3_scip.svg', format="svg")
-        print("\nSchedule visualization saved as 'schedule_visualization_3_scip.svg'")
+        plt.savefig(f'schedule_visualization_3_scip{filename}.png', format="png")
+        print(f"\nSchedule visualization saved as 'schedule_visualization_3_scip{filename}.png'")
 
         return M_value, N_value, solver.Objective().Value()
 

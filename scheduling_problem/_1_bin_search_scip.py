@@ -51,7 +51,8 @@ def solve(data = get_data()):
         print(f"Minimum feasible (M, N): {result}")
     else:
         print("No feasible (M, N) found in given bounds.")
-    print_solution(result[0],result[1],data,"1_scip")
+    print_solution(result[0],result[1],data,"1_bin_search_scip")
+    return result
     
 if __name__ == "__main__":
     solve()

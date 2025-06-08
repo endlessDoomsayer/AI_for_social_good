@@ -284,8 +284,8 @@ def solve(M, N, data=get_data(), max_time = -1):
         ax3.set_title('Energy Deficit (z_t)')
 
         plt.tight_layout()
-        plt.savefig('schedule_visualization_4_3_scip.svg', format="svg")
-        print("\nSchedule visualization saved as 'schedule_visualization_4_3_scip.svg'")
+        plt.savefig('schedule_visualization_4_3_scip.png', format="png")
+        print("\nSchedule visualization saved as 'schedule_visualization_4_3_scip.png'")
 
         # plt.show()
     else:

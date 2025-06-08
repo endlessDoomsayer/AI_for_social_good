@@ -13,7 +13,8 @@ date = "2018-02-19"
 model_1_M, model_1_N = 999999999, 999999999
 number_of_M_N_per_policy = run_models.run_models_1(MODEL_1_POLICIES, days=days, date=date)
 for policy, (M, N) in number_of_M_N_per_policy.items():
-    model_1_M, model_1_N = min(model_1_M, M), min(model_1_N, N) # taking the minimum M and N across all policies
+    if policy == '_1_scip':
+        model_1_M, model_1_N = M,N
 
 
 # Run step 2
@@ -29,7 +30,8 @@ print(step_2_days)
 number_of_cost_M_N_per_policy = run_models.run_models_3(policies=MODEL_3_POLICIES, days=days, date=date, tot_number_of_days = step_2_days)
 model_3_cost, model_3_M, model_3_N = 999999999, 999999999, 999999999
 for policy, (cost, M, N) in number_of_cost_M_N_per_policy.items():
-    model_3_cost, model_3_M, model_3_N = min(model_3_cost, cost), min(model_3_M, M), min(model_3_N, N)
+    if policy == '_3_scip':
+        model_3_cost, model_3_M, model_3_N = cost, M, N
 
 # Run Model 4
 for policy, (M, N) in MODEL_4_1_POLICIES.items():

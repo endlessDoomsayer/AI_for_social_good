@@ -4,8 +4,7 @@ from combine_data import get_data
 import time
 
 
-# Output of phase 3 - converted to use SCIP instead of GLPK
-def solve(M, N, data=get_data()):
+def solve(M, N, data=get_data(), max_time = -1):
     I = data["I"]
     J = data["J"]
     T = data["T"]
@@ -14,6 +13,7 @@ def solve(M, N, data=get_data()):
     e = data["e"]
     f = data["f"]
     c = data["c"]
+    c_e = data["c_e"]
     p = data["p"]
     mmm = data["mmm"]
     silent_periods = data["silent_periods"]
@@ -43,12 +43,7 @@ def solve(M, N, data=get_data()):
 
     # Energy stored at time t
     s = {t: solver.NumVar(0, solver.infinity(), f's_{t}') for t in T}
-
-    # New variables wrt model 1
     z = {t: solver.NumVar(0, solver.infinity(), f'z_{t}') for t in T}  # Deficit variable
-    V = {t: solver.NumVar(-solver.infinity(), solver.infinity(), f'V_{t}') for t in
-         T}  # Volume variable before applying constraints
-    b = {t: solver.BoolVar(f'b_{t}') for t in T}  # Binary variable for V_t sign
 
     # Fix variables for jobs that a machine can't do
     for i in I:
@@ -59,10 +54,9 @@ def solve(M, N, data=get_data()):
                     y[i, t, j].SetBounds(0, 0)
 
     # Objective: Minimize battery and power costs plus deficit
-    # Original: sum(0*m.z[t] for t in m.T)
     objective = solver.Objective()
     for t in T:
-        objective.SetCoefficient(z[t], 0)
+        objective.SetCoefficient(z[t], c_e)
     objective.SetMinimization()
 
     # Constraints
@@ -86,7 +80,7 @@ def solve(M, N, data=get_data()):
             constraint = solver.Constraint(M*p[t-1], M*p[t-1])
             constraint.SetCoefficient(s[t], 1)
             constraint.SetCoefficient(s[t - 1], -1)
-            constraint.SetCoefficient(z[t - 1], -1)
+            constraint.SetCoefficient(z[t-1], -1)
 
             # Add consumption from previous period
             for i in I:
@@ -98,6 +92,7 @@ def solve(M, N, data=get_data()):
     for t in T:
         constraint = solver.Constraint(-solver.infinity(), N*B)
         constraint.SetCoefficient(s[t], 1)
+
 
     # 4. Each job must run for required duration
     for i in I:
@@ -202,7 +197,8 @@ def solve(M, N, data=get_data()):
                         x[i, t, j].SetBounds(0, 0)  # Fix to 0
 
     # Set solver parameters
-    solver.SetTimeLimit(5000000)  # 5000 seconds timeout (matching original tmlim=5000)
+    if max_time != -1:
+        solver.SetTimeLimit(1000*max_time)
 
     print("Solving the model...")
     start = time.time()
@@ -253,12 +249,6 @@ def solve(M, N, data=get_data()):
         for t in range(1, T_MAX + 1):
             if t in T:
                 print(f"  t={t}: {s[t].solution_value():.2f}")
-
-        # Print volume values
-        print("\nVolume Values (V_t):")
-        for t in range(1, T_MAX + 1):
-            if t in T:
-                print(f"  t={t}: {V[t].solution_value():.2f}")
 
         # Create visualization of the schedule
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 12))

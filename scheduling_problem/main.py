@@ -1,12 +1,12 @@
 
 import run_models as run_models
 
-MODEL_1_POLICIES = [ '_1_scip']
-MODEL_3_POLICIES = [ '_3_scip']
-MODEL_4_1_POLICIES = { '_4_1_scip': (0, 0)}
+MODEL_1_POLICIES = [ '_1_scip', '_1_bin_search_scip', '_1_bin_search_scip_inverted']
+MODEL_3_POLICIES = [ '_3_scip', '_3_local_search']
+MODEL_4_1_POLICIES = { '_4_1_scip': (0, 0), '_4_1_enhanced': (0, 0), '_4_1_adapt': (0, 0)}
 MODEL_4_3_POLICIES = { '_4_3_scip': (0, 0)}
 
-days = 2
+days = 1
 date = "2018-02-19"
 
 # Run Model 1
@@ -20,8 +20,11 @@ for policy, (M, N) in number_of_M_N_per_policy.items():
 number_of_days_years_per_policy = run_models.run_step_2(number_of_M_N=number_of_M_N_per_policy, policies=MODEL_1_POLICIES, days=days, date=date)
 
 step_2_days = 999999999
-for policy, (days, years) in number_of_days_years_per_policy.items():
-    step_2_days = min(step_2_days, days)  
+for policy, (days__, years) in number_of_days_years_per_policy.items():
+    step_2_days = min(step_2_days, days__)
+
+step_2_days = round(step_2_days)
+print(step_2_days)
 
 number_of_cost_M_N_per_policy = run_models.run_models_3(policies=MODEL_3_POLICIES, days=days, date=date, tot_number_of_days = step_2_days)
 model_3_cost, model_3_M, model_3_N = 999999999, 999999999, 999999999
@@ -34,6 +37,6 @@ for policy, (M, N) in MODEL_4_1_POLICIES.items():
 for policy, (M, N) in MODEL_4_3_POLICIES.items():
     MODEL_4_3_POLICIES[policy] = (model_3_M, model_3_N)
 
-run_models.run_models_4(number_of_M_N_per_policy=MODEL_4_1_POLICIES, days=2, date=date)
-run_models.run_models_4(number_of_M_N_per_policy=MODEL_4_3_POLICIES, days=2, date=date)
+run_models.run_models_4(number_of_M_N_per_policy=MODEL_4_1_POLICIES, days=days, date=date)
+run_models.run_models_4(number_of_M_N_per_policy=MODEL_4_3_POLICIES, days=days, date=date)
 

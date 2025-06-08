@@ -17,7 +17,7 @@ import sys
 
 def run_models_1(policies, days=7, date = "2018-01-01"):
 
-    output_file = f"results_model_1.txt"
+    output_file = f"results_phase_1.txt"
     number_of_M_N_per_policy = {}  
 
     with open(output_file, "w") as f:
@@ -93,7 +93,7 @@ def run_models_1(policies, days=7, date = "2018-01-01"):
 
 def run_step_2(number_of_M_N, policies, days=7, date = "2018-01-01"):
 
-    output_file = f"results_step_2.txt"
+    output_file = f"results_phase_2.txt"
     number_of_days_years_per_policy = {}
 
     with open(output_file, "w") as f:
@@ -127,7 +127,7 @@ def run_step_2(number_of_M_N, policies, days=7, date = "2018-01-01"):
 
 def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
 
-    output_file = f"results_model_3.txt"
+    output_file = f"results_phase_3.txt"
     number_of_cost_M_N_per_policy = {}  
 
     with open(output_file, "w") as f:
@@ -147,14 +147,14 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
             start = time.time()
             if policy == '_3_local_search':
                 cost, M, N = _3_local_search.solve(tot_number_of_days = tot_number_of_days)
-                if M is None or N is None:
+                if M is None or N is None or cost is None:
                     warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
                     print(warning)
                     f.write(warning)
                     continue
             elif policy == '_3_scip':
-                cost, M, N = _3_scip.solve(tot_number_of_days = tot_number_of_days, data=data)
-                if cost or M or N is None:
+                M, N, cost = _3_scip.solve(tot_number_of_days = tot_number_of_days, data=data)
+                if cost is None or M is None or N is None:
                     warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
                     print(warning)
                     f.write(warning)
@@ -181,7 +181,8 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
 
         print(f"\n----------------------------------- MODEL 3 - Summary -----------------------------------\n")
         f.write(f"\n--------------------days--------------- MODEL 3 - Summary -----------------------------------\n")
-        for policy, (M, N) in number_of_cost_M_N_per_policy.items():
+        for policy in policies:
+            cost, M, N = number_of_cost_M_N_per_policy[policy]
             print(f"{policy}: cost={cost}, M={M}, N={N}")
             f.write(f"{policy}: cost={cost}, M={M}, N={N}\n")
 
@@ -193,8 +194,10 @@ def run_models_4(number_of_M_N_per_policy, days=1, date = "2018-01-01"):
 
     for policy, (M, N) in number_of_M_N_per_policy.items():
 
+        print(f"Trying {policy} with M={M} and N={N}")
+
         original_stdout = sys.stdout
-        with open(f"results_{policy}.txt", "w") as f:
+        with open(f"results_phase{policy}.txt", "w") as f:
             
             sys.stdout = f  
             print_policy = f"\n-----------------------------------{policy}-----------------------------------\n"

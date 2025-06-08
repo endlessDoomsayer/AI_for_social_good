@@ -283,7 +283,7 @@ def print_solution(M,N,data,filename):
         plt.tight_layout()
         plt.savefig("schedule_visualization_"+filename+".png", format="png", dpi=300, bbox_inches='tight')
         print("\nSchedule visualization saved as 'schedule_visualization_"+filename+".svg")
-        plt.show()
+        #plt.show()
 
         # Print solution statistics
         print(f"\nSolution Statistics:")

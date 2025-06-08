@@ -4,9 +4,7 @@ import time
 from combine_data import get_data
 
 
-def solve(max_time=5000, number_of_days=1, tot_number_of_days=3837):
-    # Get data
-    data = get_data()
+def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_data()):
 
     # Round to 3 decimal places
     def float_to_round(float_list):
@@ -219,7 +217,8 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=3837):
                         x[i, t, j].SetBounds(0, 0)  # Fix to 0
 
     # Solve the model
-    solver.SetTimeLimit(1000*max_time)
+    if max_time != -1:
+        solver.SetTimeLimit(1000*max_time)
 
     print("Solving the model...")
     start = time.time()

@@ -94,7 +94,7 @@ class CSPSolver:
             else:
                 consumption_prev = sum(self.e[i] * x[i, t - 1, j] + self.f[i] * y[i, t - 1, j]
                                        for i in self.I for j in self.J if j <= self.n_jobs[i])
-                model.Add(s[t] == s[t - 1] + M_val * self.p[t] - consumption_prev)
+                model.Add(s[t] == s[t - 1] + M_val * self.p[t-1] - consumption_prev)
 
         for t in self.T:
             model.Add(s[t] <= N_val * self.B)

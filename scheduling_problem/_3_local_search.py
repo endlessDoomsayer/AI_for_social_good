@@ -2,13 +2,12 @@ import pyomo.environ as pyo
 import random
 import matplotlib.pyplot as plt
 import time
-import copy
 from combine_data import get_data
 import _3_scip
 
 class LocalSearchSolver:
 
-    def __init__(self, number_of_days=7, tot_number_of_days=5803 ):
+    def __init__(self, number_of_days=7, tot_number_of_days=4011 ):
         self.tot_number_of_days = tot_number_of_days
         self.number_of_days = number_of_days
         self.data = get_data(number_of_days)  # o get_data() se non prende parametri

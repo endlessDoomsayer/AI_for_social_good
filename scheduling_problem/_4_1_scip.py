@@ -43,7 +43,7 @@ def add_constraints(solver, data, M, N, x, y, s):
             solver.Add(s[t] == 0)  # Assume starting with empty storage
         else:
             # s[t] = s[t-1] + production[t-1] - consumption[t-1]
-            constraint = solver.Constraint(M * p[t], M * p[t])
+            constraint = solver.Constraint(M * p[t-1], M * p[t-1])
             constraint.SetCoefficient(s[t], 1)
             constraint.SetCoefficient(s[t - 1], -1)
 

@@ -73,7 +73,7 @@ def solve(data=get_data()):
                 constraint.SetCoefficient(y[i, t, j], f[i])
 
     # 2. Storage computation constraint
-    for t in T:#TODO: this has changed, change in all the other models
+    for t in T:
         if t == 1:
             solver.Add(s[t] == 0)  # Assume starting with empty storage
         else:
@@ -81,7 +81,7 @@ def solve(data=get_data()):
             constraint = solver.Constraint(0, 0)
             constraint.SetCoefficient(s[t], 1)
             constraint.SetCoefficient(s[t - 1], -1)
-            constraint.SetCoefficient(M_var, -p[t])
+            constraint.SetCoefficient(M_var, -p[t-1])
 
             # Add consumption from previous period
             for i in I:

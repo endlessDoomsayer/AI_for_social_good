@@ -98,7 +98,7 @@ def solve(max_time=5000, number_of_days=1, tot_number_of_days=4011):
             constraint = solver.Constraint(0, 0)
             constraint.SetCoefficient(s[t], 1)
             constraint.SetCoefficient(s[t - 1], -1)
-            constraint.SetCoefficient(M_var, -p[t])
+            constraint.SetCoefficient(M_var, -p[t-1])
             constraint.SetCoefficient(z[t-1], -1)
 
             # Add consumption from previous period

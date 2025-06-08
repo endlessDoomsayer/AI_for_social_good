@@ -266,7 +266,7 @@ class LocalSearchSCIPSolver:
         """Get initial solution with high M and N values"""
         print("Finding initial solution...")
 
-        initial_M, initial_N, obj_value = _3_scip.solve(5,1,4011)
+        initial_M, initial_N, obj_value = _3_scip.solve(5,1,3837)
 
         solver = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
         if solver is None:

@@ -4,7 +4,7 @@ import time
 from combine_data import get_data
 
 
-def solve(max_time=5000, number_of_days=1, tot_number_of_days=4011):
+def solve(max_time=5000, number_of_days=1, tot_number_of_days=3837):
     # Get data
     data = get_data()
 

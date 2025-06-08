@@ -306,4 +306,4 @@ def solve(M, N, data = combine_data.get_data()):
     print_solution(M,N,data,"4_1_lin_prog")
 
 if __name__ == "__main__":
-    solve(2491,166)
+    solve(2491,141)

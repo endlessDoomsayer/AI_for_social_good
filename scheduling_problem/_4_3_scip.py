@@ -303,4 +303,4 @@ def solve(M, N, data=get_data()):
 
 
 if __name__ == "__main__":
-    solve(1408, 1)
+    solve(1393, 0)

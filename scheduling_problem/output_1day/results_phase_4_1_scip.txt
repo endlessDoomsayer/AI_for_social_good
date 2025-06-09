@@ -1,0 +1,114 @@
+
+-----------------------------------_4_1_scip-----------------------------------
+
+Number of days: 1
+Start date: 2018-02-19 00:00:00
+End date: 2018-02-19 00:00:00
+Loaded dataset IMDELD with 1091 entries
+--------------------------------------
+NILM DATA
+
+Machine names: ['Pelletizer I', 'Pelletizer II', 'Double-pole Contactor I', 'Double-pole Contactor II', 'Exhaust Fan I', 'Exhaust Fan II']
+Machine number: 6
+Max jobs per machine: 2
+Max time period: 23
+e = {1: 93882.3, 2: 73544.6, 3: 3517.64, 4: 3503.99, 5: 3338.27, 6: 8929.86}
+f = {1: 15647, 2: 12257, 3: 586, 4: 583, 5: 556, 6: 1488}
+d = {1: 6, 2: 6, 3: 6, 4: 6, 5: 12, 6: 12}
+Model loaded successfully from: C:\Users\vison\OneDrive\Desktop\Progetti\AI_for_social_good\weather_pv_conversion\output\model\best_estimator_model.pkl
+Model expects features (order from model.feature_names_in_): ['temperature_2m', 'precipitation', 'wind_speed_10m', 'snowfall', 'rain', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'shortwave_radiation', 'direct_radiation', 'diffuse_radiation', 'direct_normal_irradiance', 'global_tilted_irradiance', 'terrestrial_radiation']
+Scaler loaded successfully from: C:\Users\vison\OneDrive\Desktop\Progetti\AI_for_social_good\weather_pv_conversion\output\model\scaler.pkl
+Scaler was fit on features (order from scaler.feature_names_in_): ['cloud_cover', 'cloud_cover_high', 'cloud_cover_low', 'cloud_cover_mid', 'diffuse_radiation', 'direct_normal_irradiance', 'direct_radiation', 'global_tilted_irradiance', 'rain', 'shortwave_radiation', 'snowfall', 'temperature_2m', 'terrestrial_radiation', 'wind_speed_10m']
+
+--------------------------------------
+SOLAR PANELS
+
+Fetching weather data from 2018-02-19 to 2018-02-19...
+Filtered data for prediction: 23 rows.
+Applying loaded scaler...
+Data scaled successfully.
+Making predictions with 15 features (SVR model order): ['temperature_2m', 'precipitation', 'wind_speed_10m', 'snowfall', 'rain', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'shortwave_radiation', 'direct_radiation', 'diffuse_radiation', 'direct_normal_irradiance', 'global_tilted_irradiance', 'terrestrial_radiation']
+
+
+Solar production in the days: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 50.18801669482668, 11: 122.0793705527417, 12: 134.64046145309192, 13: 142.757280842964, 14: 145.05942301790105, 15: 107.36467013291019, 16: 91.96295015240437, 17: 68.56685824587123, 18: 43.99346476631278, 19: 0, 20: 0, 21: 0, 22: 0, 23: 0}
+
+--------------------------------------
+Generated Parameters: 
+
+Cost per battery (c_b): 2530
+Cost per power unit (c_p): 415.0
+Cost of energy taken from outside (c_e): 0.00016053
+Battery capacity (B): 5000
+Max energy available (mmm): {1: 918247, 2: 934180, 3: 871816, 4: 929562, 5: 940265, 6: 831331, 7: 897364, 8: 827405, 9: 985829, 10: 952690, 11: 994639, 12: 873537, 13: 972786, 14: 894538, 15: 956780, 16: 829426, 17: 960939, 18: 906270, 19: 905314, 20: 929279, 21: 926662, 22: 807570, 23: 952786}
+Required jobs per machine (n_jobs): {1: 2, 2: 2, 3: 1, 4: 1, 5: 1, 6: 1}
+Machine cooldown periods (c): {1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2}
+Machine dependencies: []
+Shared resource groups: []
+Silent periods: {}
+Time limit for each job (THRESHOLD_FOR_JOB_J_AND_I): {(1, 1): 24, (1, 2): 48, (2, 1): 24, (2, 2): 48, (3, 1): 24, (3, 2): 48, (4, 1): 24, (4, 2): 48, (5, 1): 24, (5, 2): 48, (6, 1): 24, (6, 2): 48}
+--------------------------------------
+
+Status: OPTIMAL
+Solution found!
+
+Machine Schedules:
+
+Machine 1 Schedule:
+  Job 1 starts at t=[10]
+  Job 1 operates at t=[10, 11, 12, 13, 14, 15]
+  Job 2 starts at t=[16]
+  Job 2 operates at t=[16, 17, 18, 19, 20, 21]
+
+Machine 2 Schedule:
+  Job 1 starts at t=[11]
+  Job 1 operates at t=[11, 12, 13, 14, 15, 16]
+  Job 2 starts at t=[17]
+  Job 2 operates at t=[17, 18, 19, 20, 21, 22]
+
+Machine 3 Schedule:
+  Job 1 starts at t=[11]
+  Job 1 operates at t=[11, 12, 13, 14, 15, 16]
+
+Machine 4 Schedule:
+  Job 1 starts at t=[11]
+  Job 1 operates at t=[11, 12, 13, 14, 15, 16]
+
+Machine 5 Schedule:
+  Job 1 starts at t=[10, 23]
+  Job 1 operates at t=[10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23]
+
+Machine 6 Schedule:
+  Job 1 starts at t=[10]
+  Job 1 operates at t=[10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+
+Storage Levels:
+  t=1: 0.00
+  t=2: 0.00
+  t=3: 0.00
+  t=4: 0.00
+  t=5: 0.00
+  t=6: 0.00
+  t=7: 0.00
+  t=8: 0.00
+  t=9: 0.00
+  t=10: 0.00
+  t=11: 1176.92
+  t=12: 105133.97
+  t=13: 253806.70
+  t=14: 422698.43
+  t=15: 597324.79
+  t=16: 678053.52
+  t=17: 704769.57
+  t=18: 683617.59
+  t=19: 613510.28
+  t=20: 433815.25
+  t=21: 254120.22
+  t=22: 77763.46
+  t=23: 4218.86
+
+Schedule visualization saved as 'output/schedule_visualization_4_1_scip.png
+
+Solution Statistics:
+Total variables: 575
+Total constraints: 1060
+Solve time: 945 ms

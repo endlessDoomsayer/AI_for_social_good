@@ -1,0 +1,30 @@
+----------------------------------- MODEL 1 -----------------------------------
+
+-----------------------------------_1_scip-----------------------------------
+start date: 2018-02-19
+Days: 1
+elapsed: Time taken for _1_scip: 3.73 seconds
+
+result: Results for _1_scip: M=2491, N=141
+
+
+-----------------------------------_1_bin_search_scip-----------------------------------
+start date: 2018-02-19
+Days: 1
+elapsed: Time taken for _1_bin_search_scip: 77.87 seconds
+
+result: Results for _1_bin_search_scip: M=2491, N=141
+
+
+-----------------------------------_1_bin_search_scip_inverted-----------------------------------
+start date: 2018-02-19
+Days: 1
+elapsed: Time taken for _1_bin_search_scip_inverted: 33.71 seconds
+
+result: Results for _1_bin_search_scip_inverted: M=2491, N=524
+
+
+----------------------------------- MODEL 1 - Summary -----------------------------------
+_1_scip: M=2491, N=141
+_1_bin_search_scip: M=2491, N=141
+_1_bin_search_scip_inverted: M=2491, N=524

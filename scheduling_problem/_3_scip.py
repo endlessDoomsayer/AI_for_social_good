@@ -21,7 +21,7 @@ def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_dat
     c_b = data["c_b"]
     c_p = data["c_p"]
     c_e = data["c_e"]
-    c_e *= tot_number_of_days/number_of_days
+    c_e *= tot_number_of_days/number_of_days # Since we won't test for all the time horizon (it's too long), we multiply the cost of these days to the one of the entire time horizon.
     c = data["c"]
     p = float_to_round(data["p"])
     mmm = data["mmm"]
@@ -306,7 +306,3 @@ def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_dat
     else:
         print("Failed to find an optimal solution.")
         return None
-
-
-if __name__ == "__main__":
-    solve()

@@ -5,7 +5,23 @@ system.
 To see the full specifications of the phases and the corresponding models, open the 
 `main_script.ipynb` file.
 
-Below there is a brief description of the phases and the corresponding files.
+Below there is first an explanation of the complete system, and then a brief description of the phases and the corresponding files.
+
+### Complete system
+The complete system can be run in two ways:
+- `main.py`: this script executes the four processing phases sequentially, saving the results to the appropriate files. It also leverages `run_models.py` during execution.
+The number of days to set the time horizon for the model can be changed (right now is set to 1). Increasing the number of days increases the complexity and the
+time required to find a solution exponentially.
+- `main_day_per_day.py`: this script executes phase from 1 to 3 singularly for a sequence of days, printing the results for both M,N and the corresponding years and days.
+It exploits a time decomposition of the problem, solving the models for smaller periods to avoid the time complexity, with the implicit assumption that job deadlines are set to the end 
+of each day. A good approximation of the number of batteries and panels that are needed in phase 1 and 3 can be obtained by the worst case of the results of the days.
+
+### Utilities
+The project includes several utility components:
+- `combine_data.py`: this script merges data from NILM and the solar panel predictor to generate comprehensive datasets. It can produce data for both industrial and residential scenarios, including modified versions.
+- `output_1day/` folder: contains sample results generated using example data for one single day and `main.py`.
+- `output_2days/` folder: contains sample results generated using example data for two days and `main.py`.
+- `output_day_per_day/` folder: contains sample results generated using example data for one day and `main_day_per_day.py`.
 
 ## Phase 1
 Minimize the number of panels and batteries without using any external energy source.
@@ -15,7 +31,7 @@ It is solved in two ways:
 While the first one does a binary search on M and for each M does a binary search on N to find the minimum couple (M,N) for which the scheduling problem is feasible,
 the second one first does a binary search on N and then on M aiming at the same objective.
 
-As stated in the paper, the second method provides a good approximate solution in less than half the time of the first one.
+As stated in the paper, the second method provides a good approximate solution, but often requires more time than the first one.
 
 ## Phase 2
 It doesn't require to solve a model, but to compute a simple division.
@@ -24,12 +40,13 @@ It's done to understand the time horizon that could be covered by only using ext
 `_2.py` solves it.
 
 ## Phase 3
-Within the time horizon given by phase 2, we try to set a lower number of batteries and panels by buying some external energy. 
+Within the time horizon given by phase 2, we try to set a lower number of batteries and panels by also buying some external energy. 
 It is solved in two ways:
 - `_3_scip.py` solves it as a MIP model using SCIP;
 - `_3_local_search.py` first finds a feasible solution by using SCIP and then tries to optimize it locally to obtain a better result.
 
-As stated in the paper, the second method provides a good approximate solution in far fewer time than the first one.
+As stated in the paper, the second method provides a good approximate solution in less time than the first one, which is really important especially when the number of
+days increases.
 
 ## Phase 4
 This phase is devoted to obtain the actual scheduling of the machines once we have set the number of panels and batteries.
@@ -48,10 +65,3 @@ Simulated Annealing, that take as input a scheduling and perform a local search 
 ### 4.3 
 Finds the optimal scheduling if we can use imported energy.
 `_4_3_scip.py` solves it as a MIP model using SCIP.
-
-## Utilities
-The project includes several utility components:
-- `combine_data.py`: this script merges data from NILM and the solar panel predictor to generate comprehensive datasets. It can produce data for both industrial and residential scenarios, including modified versions.
-- `output/` folder: contains sample results generated using example data.
-- `main.py`: this script executes the four processing phases sequentially, saving the results to the appropriate files. It also leverages `run_models.py` during execution.
-- `main_day_per_day.py`: this script executes phase from 1 to 3 for a sequence of days, printing the results for both M,N and the corresponding years and days (it could be done to assess an approximation of the minimum M and N for a given period). It must be checked to have information on the machines for those days.

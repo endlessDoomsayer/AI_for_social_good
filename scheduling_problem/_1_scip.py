@@ -294,7 +294,7 @@ def solve(data=get_data(), s_init = 0,filename=""):
         print(f"Total variables: {solver.NumVariables()}")
         print(f"Total constraints: {solver.NumConstraints()}")
 
-        return None, None
+        return None, None, None
 
 if __name__ == "__main__":
     solve()

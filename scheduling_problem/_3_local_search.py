@@ -264,7 +264,7 @@ class LocalSearchSCIPSolver:
         """Get initial solution with high M and N values"""
         print("Finding initial solution...")
 
-        initial_M, initial_N, obj_value = _3_scip.solve(5000,number_of_days=number_of_days,tot_number_of_days=tot_number_of_days, filename = "_local")
+        initial_M, initial_N, obj_value, _ = _3_scip.solve(5000,number_of_days=number_of_days,tot_number_of_days=tot_number_of_days, filename = "_local")
 
         solver = self.create_model(M_fixed=initial_M, N_fixed=initial_N)
         if solver is None:

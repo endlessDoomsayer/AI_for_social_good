@@ -6,7 +6,7 @@ MODEL_3_POLICIES = [ '_3_local_search']
 MODEL_4_1_POLICIES = { '_4_1_enhanced': (0, 0)}
 MODEL_4_3_POLICIES = { '_4_3_scip': (0, 0)}
 
-days = 2
+days = 1
 date = "2018-02-19"
 
 # Run Model 1

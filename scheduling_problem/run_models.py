@@ -45,7 +45,7 @@ def run_models_1(policies, days=7, date = "2018-01-01"):
                     continue
 
             elif policy == '_1_scip':
-                M, N = _1_scip.solve(data=data)
+                M, N, _ = _1_scip.solve(data=data)
                 if M is None or N is None:
                     warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
                     print(warning)
@@ -154,7 +154,7 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
                     f.write(warning)
                     continue
             elif policy == '_3_scip':
-                M, N, cost = _3_scip.solve(tot_number_of_days = tot_number_of_days, data=data)
+                M, N, cost, _ = _3_scip.solve(tot_number_of_days = tot_number_of_days, data=data)
                 if cost is None or M is None or N is None:
                     warning = f"No feasible (M, N) found for policy '{policy}' and date '{date}'.\n"
                     print(warning)

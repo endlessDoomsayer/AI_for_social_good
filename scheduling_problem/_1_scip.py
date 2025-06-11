@@ -5,7 +5,7 @@ import time
 
 # Solves at the optimum the first phase
 
-def solve(data=get_data()):
+def solve(data=get_data(), s_init = 0,filename=""):
     I = data["I"]
     J = data["J"]
     T = data["T"]
@@ -76,7 +76,7 @@ def solve(data=get_data()):
     # 2. Storage computation constraint
     for t in T:
         if t == 1:
-            solver.Add(s[t] == 0)
+            solver.Add(s[t] == s_init)
         else:
             constraint = solver.Constraint(0, 0)
             constraint.SetCoefficient(s[t], 1)
@@ -272,7 +272,7 @@ def solve(data=get_data()):
         ax2.legend()
 
         plt.tight_layout()
-        plt.savefig('output/schedule_visualization_1_scip.png')
+        plt.savefig(f'output/schedule_visualization_1_scip{filename}.png')
         print("\nSchedule visualization saved as 'output/schedule_visualization_1_scip.png'")
 
         # Print solution statistics
@@ -281,7 +281,7 @@ def solve(data=get_data()):
         print(f"Total constraints: {solver.NumConstraints()}")
         print(f"Solve time: {solver.wall_time()} ms")
 
-        return M_value, N_value
+        return M_value, N_value, s[T_MAX].solution_value()
 
     else:
         print("Failed to find an optimal solution.")

@@ -3,10 +3,15 @@
 -----------------------------------_3_local_search-----------------------------------
 start date: 2018-02-19
 Days: 2
-Elapsed: Time taken for _3_local_search: 1447.30 seconds
+Elapsed: Time taken for _3_local_search: 6067.26 seconds
 
-Result: Results for _3_local_search: cost=1330989.0887355998, M=1740, N=34
+  Number of Panels (M): 2641
+  Number of Batteries (N): 137
+  Total Cost: 1444258.19
+  Panel Cost: 1096015.00
+  Battery Cost: 346610.00
+  Deficit Cost: 1633.19
 
 
 --------------------days--------------- MODEL 3 - Summary -----------------------------------
-_3_local_search: cost=1330989.0887355998, M=1740, N=34
+_3_local_search: cost=1444258.19, M=2641, N=137

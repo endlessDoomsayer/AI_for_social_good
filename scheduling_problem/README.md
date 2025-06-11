@@ -54,3 +54,4 @@ The project includes several utility components:
 - `combine_data.py`: this script merges data from NILM and the solar panel predictor to generate comprehensive datasets. It can produce data for both industrial and residential scenarios, including modified versions.
 - `output/` folder: contains sample results generated using example data.
 - `main.py`: this script executes the four processing phases sequentially, saving the results to the appropriate files. It also leverages `run_models.py` during execution.
+- `main_day_per_day.py`: this script executes phase from 1 to 3 for a sequence of days, printing the results for both M,N and the corresponding years and days (it could be done to assess an approximation of the minimum M and N for a given period). It must be checked to have information on the machines for those days.

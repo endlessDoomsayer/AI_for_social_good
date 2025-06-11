@@ -5,7 +5,7 @@ from combine_data import get_data
 
 # Solves at the optimum phase 3
 
-def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_data(), filename = ""):
+def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_data(), filename = "",s_init=0):
 
     # Round to 3 decimal places
     def float_to_round(float_list):
@@ -91,7 +91,7 @@ def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_dat
     # 2. Storage computation constraint
     for t in T:
         if t == 1:
-            solver.Add(s[t] == 0)
+            solver.Add(s[t] == s_init)
         else:
             constraint = solver.Constraint(0, 0)
             constraint.SetCoefficient(s[t], 1)
@@ -301,7 +301,7 @@ def solve(max_time=-1, number_of_days=1, tot_number_of_days=3837, data = get_dat
         plt.savefig(f'output/schedule_visualization_3_scip{filename}.png', format="png")
         print(f"\nSchedule visualization saved as 'output/schedule_visualization_3_scip{filename}.png'")
 
-        return M_value, N_value, solver.Objective().Value()
+        return M_value, N_value, solver.Objective().Value(), s[T_MAX].solution_value()
 
     else:
         print("Failed to find an optimal solution.")

@@ -33,4 +33,4 @@ def print_sol(M,N, number_of_days = 1, data = get_data()):
 
 # Example with some data at hand
 if __name__ == "__main__":
-    print_sol(2491,141)
+    print_sol(1740,34)

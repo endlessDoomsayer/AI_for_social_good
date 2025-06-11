@@ -473,4 +473,4 @@ def solve(M_val, N_val, data = get_data()):
         technique()
 
 if __name__ == "__main__":
-    solve(2491, 141)
+    solve(2983,212)

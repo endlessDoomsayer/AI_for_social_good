@@ -88,7 +88,7 @@ def generate_data(data, number_of_days):
     print("--------------------------------------\n")
 
 
-def get_data(number_of_days = 1, day = pd.Timestamp("2018-02-19")):
+def get_data(number_of_days = 2, day = pd.Timestamp("2018-02-19")):
     
     end_date = day+pd.to_timedelta(number_of_days-1, unit='D')
     

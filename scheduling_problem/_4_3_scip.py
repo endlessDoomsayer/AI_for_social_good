@@ -291,4 +291,4 @@ def solve(M, N, data=get_data(), max_time = -1):
 
 
 if __name__ == "__main__":
-    solve(1393, 0)
+    solve(1740, 34)

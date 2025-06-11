@@ -304,4 +304,4 @@ def solve(M, N, data = combine_data.get_data()):
     print_solution(M,N,data,"4_1_scip")
 
 if __name__ == "__main__":
-    solve(2491,141)
+    solve(2983,212)

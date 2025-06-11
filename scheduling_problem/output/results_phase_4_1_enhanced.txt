@@ -1,0 +1,80 @@
+
+-----------------------------------_4_1_enhanced-----------------------------------
+
+Number of days: 2
+Start date: 2018-02-19 00:00:00
+End date: 2018-02-20 00:00:00
+Loaded dataset IMDELD with 1091 entries
+--------------------------------------
+NILM DATA
+
+Machine names: ['Pelletizer I', 'Pelletizer II', 'Double-pole Contactor I', 'Double-pole Contactor II', 'Exhaust Fan I', 'Exhaust Fan II']
+Machine number: 6
+Max jobs per machine: 4
+Max time period: 47
+e = {1: 94159.92000000001, 2: 77326.48400000003, 3: 3509.7252000000003, 4: 3489.4551999999994, 5: 3380.6787999999997, 6: 8903.479999999998}
+f = {1: 15693, 2: 12887, 3: 584, 4: 581, 5: 563, 6: 1483}
+d = {1: 6, 2: 6, 3: 6, 4: 6, 5: 12, 6: 12}
+Model loaded successfully from: C:\Users\vison\Desktop\AI\AI_for_social_good\weather_pv_conversion\output\model\best_estimator_model.pkl
+Model expects features (order from model.feature_names_in_): ['temperature_2m', 'precipitation', 'wind_speed_10m', 'snowfall', 'rain', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'shortwave_radiation', 'direct_radiation', 'diffuse_radiation', 'direct_normal_irradiance', 'global_tilted_irradiance', 'terrestrial_radiation']
+Scaler loaded successfully from: C:\Users\vison\Desktop\AI\AI_for_social_good\weather_pv_conversion\output\model\scaler.pkl
+Scaler was fit on features (order from scaler.feature_names_in_): ['cloud_cover', 'cloud_cover_high', 'cloud_cover_low', 'cloud_cover_mid', 'diffuse_radiation', 'direct_normal_irradiance', 'direct_radiation', 'global_tilted_irradiance', 'rain', 'shortwave_radiation', 'snowfall', 'temperature_2m', 'terrestrial_radiation', 'wind_speed_10m']
+
+--------------------------------------
+SOLAR PANELS
+
+Fetching weather data from 2018-02-19 to 2018-02-20...
+Filtered data for prediction: 47 rows.
+Applying loaded scaler...
+Data scaled successfully.
+Making predictions with 15 features (SVR model order): ['temperature_2m', 'precipitation', 'wind_speed_10m', 'snowfall', 'rain', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'shortwave_radiation', 'direct_radiation', 'diffuse_radiation', 'direct_normal_irradiance', 'global_tilted_irradiance', 'terrestrial_radiation']
+
+
+Solar production in the days: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 50.18801669482486, 11: 122.07937055273624, 12: 134.64046145308805, 13: 142.75728084295991, 14: 145.05942301789992, 15: 107.36467013290752, 16: 91.96295015240301, 17: 68.56685824587305, 18: 43.99346476631142, 19: 0, 20: 0, 21: 0, 22: 0, 23: 0, 24: 0, 25: 0, 26: 0, 27: 0, 28: 0, 29: 0, 30: 0, 31: 0, 32: 0, 33: 0.8572369771449075, 34: 23.21335150464585, 35: 70.86856588133239, 36: 110.90400914330579, 37: 139.38675656525416, 38: 125.94658285603361, 39: 55.38688773326967, 40: 61.13363999602899, 41: 41.25121239119402, 42: 12.644624549681566, 43: 0, 44: 0, 45: 0, 46: 0, 47: 0}
+
+--------------------------------------
+Generated Parameters: 
+
+Cost per battery (c_b): 2530
+Cost per power unit (c_p): 415.0
+Cost of energy taken from outside (c_e): 0.00016053
+Battery capacity (B): 5000
+Max energy available (mmm): {1: 953325, 2: 923768, 3: 822542, 4: 854706, 5: 800027, 6: 869177, 7: 935327, 8: 806739, 9: 892533, 10: 949886, 11: 818446, 12: 996916, 13: 801578, 14: 931347, 15: 826245, 16: 983451, 17: 988731, 18: 986058, 19: 801425, 20: 849929, 21: 820256, 22: 830447, 23: 806699, 24: 894439, 25: 905576, 26: 854330, 27: 972399, 28: 869011, 29: 892584, 30: 957097, 31: 949006, 32: 924499, 33: 836876, 34: 800560, 35: 933750, 36: 858976, 37: 922060, 38: 918290, 39: 952916, 40: 892886, 41: 975986, 42: 953976, 43: 996788, 44: 804538, 45: 956150, 46: 947204, 47: 960345}
+Required jobs per machine (n_jobs): {1: 4, 2: 4, 3: 2, 4: 2, 5: 2, 6: 2}
+Machine cooldown periods (c): {1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2}
+Machine dependencies: []
+Shared resource groups: []
+Silent periods: {}
+Time limit for each job (THRESHOLD_FOR_JOB_J_AND_I): {(1, 1): 24, (1, 2): 48, (1, 3): 72, (1, 4): 96, (2, 1): 24, (2, 2): 48, (2, 3): 72, (2, 4): 96, (3, 1): 24, (3, 2): 48, (3, 3): 72, (3, 4): 96, (4, 1): 24, (4, 2): 48, (4, 3): 72, (4, 4): 96, (5, 1): 24, (5, 2): 48, (5, 3): 72, (5, 4): 96, (6, 1): 24, (6, 2): 48, (6, 3): 72, (6, 4): 96}
+--------------------------------------
+
+=== Solving CSP with M=2983, N=212 using ALL techniques ===
+
+
+==================================================
+TRYING: Enhanced CSP Solver
+==================================================
+
+--- Trying Standard Backtracking ---
+Using Standard Backtracking for M=2983, N=212
+Number of conflicts: 1205
+Number of branches: 7586
+Wall time: 0.23s
+Time taken for Standard Backtracking: 0.3303651809692383
+Standard Backtracking did not find a feasible solution
+
+--- Trying Constraint Propagation ---
+Using Constraint Propagation for M=2983, N=212
+Number of conflicts: 1662
+Number of branches: 7714
+Wall time: 0.19s
+Time taken for Constraint Propagation: 0.3381791114807129
+Constraint Propagation did not find a feasible solution
+
+--- Trying Improved Backtracking ---
+Using Advanced Backtracking with MCV, LCV, Backjumping and No-good Learning for M=2983, N=212
+Number of conflicts: 2344
+Number of branches: 22400
+Wall time: 0.35s
+Time taken for Improved Backtracking: 0.43228864669799805
+Improved Backtracking did not find a feasible solution

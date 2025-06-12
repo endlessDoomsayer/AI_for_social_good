@@ -39,16 +39,16 @@ Cost per battery (c_b): 2530
 Cost per power unit (c_p): 415.0
 Cost of energy taken from outside (c_e): 0.00016053
 Battery capacity (B): 5000
-Max energy available (mmm): {1: 816564, 2: 961873, 3: 958851, 4: 863932, 5: 850232, 6: 969925, 7: 980474, 8: 937118, 9: 938105, 10: 878661, 11: 961669, 12: 998701, 13: 855037, 14: 835496, 15: 989019, 16: 931697, 17: 962717, 18: 884350, 19: 988653, 20: 934348, 21: 967155, 22: 998492, 23: 831890}
+Max energy available (mmm): {1: 923966, 2: 839809, 3: 939196, 4: 894441, 5: 814511, 6: 961722, 7: 843454, 8: 858476, 9: 920396, 10: 820525, 11: 915748, 12: 961128, 13: 961173, 14: 850358, 15: 807150, 16: 949593, 17: 979655, 18: 806123, 19: 956573, 20: 945874, 21: 895882, 22: 972847, 23: 870375}
 Required jobs per machine (n_jobs): {1: 2, 2: 2, 3: 1, 4: 1, 5: 1, 6: 1}
 Machine cooldown periods (c): {1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2}
-Machine dependencies: []
-Shared resource groups: []
-Silent periods: {}
+Machine dependencies: [(1, 3)]
+Shared resource groups: [(3, 4)]
+Silent periods: {1: [10, 11], 5: [23, 24]}
 Time limit for each job (THRESHOLD_FOR_JOB_J_AND_I): {(1, 1): 24, (1, 2): 48, (2, 1): 24, (2, 2): 48, (3, 1): 24, (3, 2): 48, (4, 1): 24, (4, 2): 48, (5, 1): 24, (5, 2): 48, (6, 1): 24, (6, 2): 48}
 --------------------------------------
 
-Loading solution and running local search for M=2491, N=141
+Loading solution and running local search for M=2491, N=169
 Loaded 60 job assignments
 Initial solution evaluation...
 Initial violations: 0

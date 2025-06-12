@@ -39,16 +39,16 @@ Cost per battery (c_b): 2530
 Cost per power unit (c_p): 415.0
 Cost of energy taken from outside (c_e): 0.00016053
 Battery capacity (B): 5000
-Max energy available (mmm): {1: 933587, 2: 904949, 3: 982611, 4: 936141, 5: 842743, 6: 996001, 7: 983930, 8: 828286, 9: 829357, 10: 812009, 11: 941189, 12: 801792, 13: 886353, 14: 968229, 15: 818764, 16: 951162, 17: 870883, 18: 871437, 19: 861055, 20: 944253, 21: 804054, 22: 828273, 23: 884007}
+Max energy available (mmm): {1: 900484, 2: 903902, 3: 966101, 4: 867171, 5: 821639, 6: 934165, 7: 819545, 8: 832555, 9: 983055, 10: 892690, 11: 879744, 12: 933767, 13: 862476, 14: 977071, 15: 987788, 16: 815062, 17: 974093, 18: 953802, 19: 832050, 20: 831570, 21: 895706, 22: 982236, 23: 848755}
 Required jobs per machine (n_jobs): {1: 2, 2: 2, 3: 1, 4: 1, 5: 1, 6: 1}
 Machine cooldown periods (c): {1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2}
-Machine dependencies: []
-Shared resource groups: []
-Silent periods: {}
+Machine dependencies: [(1, 3)]
+Shared resource groups: [(3, 4)]
+Silent periods: {1: [10, 11], 5: [23, 24]}
 Time limit for each job (THRESHOLD_FOR_JOB_J_AND_I): {(1, 1): 24, (1, 2): 48, (2, 1): 24, (2, 2): 48, (3, 1): 24, (3, 2): 48, (4, 1): 24, (4, 2): 48, (5, 1): 24, (5, 2): 48, (6, 1): 24, (6, 2): 48}
 --------------------------------------
 
-=== Solving CSP with M=2491, N=141 using ALL techniques ===
+=== Solving CSP with M=2491, N=169 using ALL techniques ===
 
 
 ==================================================
@@ -56,25 +56,25 @@ TRYING: Enhanced CSP Solver
 ==================================================
 
 --- Trying Standard Backtracking ---
-Using Standard Backtracking for M=2491, N=141
-Number of conflicts: 67
-Number of branches: 947
-Wall time: 0.16s
-Time taken for Standard Backtracking: 0.2533597946166992
+Using Standard Backtracking for M=2491, N=169
+Number of conflicts: 0
+Number of branches: 0
+Wall time: 0.09s
+Time taken for Standard Backtracking: 0.17097115516662598
 Standard Backtracking found a feasible solution
 
 --- Trying Constraint Propagation ---
-Using Constraint Propagation for M=2491, N=141
-Number of conflicts: 62
-Number of branches: 950
+Using Constraint Propagation for M=2491, N=169
+Number of conflicts: 0
+Number of branches: 0
 Wall time: 0.03s
-Time taken for Constraint Propagation: 0.06397724151611328
+Time taken for Constraint Propagation: 0.06364178657531738
 Constraint Propagation found a feasible solution
 
 --- Trying Improved Backtracking ---
-Using Advanced Backtracking with MCV, LCV, Backjumping and No-good Learning for M=2491, N=141
-Number of conflicts: 66
-Number of branches: 906
-Wall time: 0.05s
-Time taken for Improved Backtracking: 0.07803082466125488
+Using Advanced Backtracking with MCV, LCV, Backjumping and No-good Learning for M=2491, N=169
+Number of conflicts: 0
+Number of branches: 0
+Wall time: 0.03s
+Time taken for Improved Backtracking: 0.07769656181335449
 Improved Backtracking found a feasible solution

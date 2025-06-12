@@ -28,7 +28,7 @@ def get_solar_production(data, day, end_date):
     print("\n\nSolar production in the days:", p)
 
 
-def generate_data(data, number_of_days):
+def generate_data(data, number_of_days, modified = False):
     # Cost parameters
     # https://www.mosaikosrl.net/batterie-accumulo-fotovoltaico/
     B = 5000  # B: battery capacity
@@ -64,9 +64,14 @@ def generate_data(data, number_of_days):
     data["THRESHOLD_FOR_JOB_J_AND_I"] = THRESHOLD_FOR_JOB_J_AND_I
 
     # Sets of dependencies and shared resources
-    M_dependencies = []#[(1,3)]  # Pairs of machines where the second depends on the first
-    M_shared =[]# [(3,4)]  # Groups of machines that share resources and cannot run simultaneously
-    silent_periods = {}#{1:[25,26,27,28,29,30,31,32,33], 5:[32,33,34,35,36,37,38]}  # Periods when certain machines must be off
+    M_dependencies = [(1,3)]  # Pairs of machines where the second depends on the first
+    M_shared =[(3,4)]  # Groups of machines that share resources and cannot run simultaneously
+    silent_periods = {1:[10,11], 5:[23,24]}  # Periods when certain machines must be off
+
+    if modified:
+        M_dependencies = [(1,3)]  # Pairs of machines where the second depends on the first
+        M_shared = [(3,4)]  # Groups of machines that share resources and cannot run simultaneously
+        silent_periods = {1:[14,15,16], 5:[18,19]}   # Periods when certain machines must be off
 
     data["M_dependencies"] = M_dependencies
     data["M_shared"] = M_shared
@@ -229,7 +234,7 @@ def get_modified_data(number_of_days=1, day=pd.Timestamp("2018-02-19")):
     get_solar_production(data, day, end_date)
 
     # 3. GENERATED DATA
-    generate_data(data, number_of_days)
+    generate_data(data, number_of_days, modified = True)
 
     return data
 

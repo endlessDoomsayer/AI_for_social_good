@@ -181,7 +181,7 @@ def run_models_3(policies, tot_number_of_days,  days=7, date = "2018-01-01"):
                 number_of_cost_M_N_per_policy[policy] = (cost, M, N)
 
         print(f"\n----------------------------------- MODEL 3 - Summary -----------------------------------\n")
-        f.write(f"\n--------------------days--------------- MODEL 3 - Summary -----------------------------------\n")
+        f.write(f"\n----------------------------------- MODEL 3 - Summary -----------------------------------\n")
         for policy in policies:
             cost, M, N = number_of_cost_M_N_per_policy[policy]
             print(f"{policy}: cost={cost}, M={M}, N={N}")

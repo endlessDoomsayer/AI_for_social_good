@@ -26,7 +26,7 @@ def print_solution(optimal_schedule):
     # Convert tuple keys to strings
     serializable_schedule = {f"{i},{t},{j}": x for (i, t, j), x in optimal_schedule.items()}
 
-    with open("optimal_schedule.json", "w") as f:
+    with open("output/optimal_schedule.json", "w") as f:
         json.dump(serializable_schedule, f, indent=2)
 
 

@@ -1,3 +1,6 @@
+# Dependences
+All dependencies required to run the project are listed in the requirements.txt file.
+
 # Structure of the folder
 This folder contains the code and the full specification of the four phases of our
 system.

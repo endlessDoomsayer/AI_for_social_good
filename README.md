@@ -5,6 +5,6 @@ The following is the code for the AI for social good project of AI course at Uni
 The project is divided in 3 parts:
 - `weather_pv_conversion` contains the code to predict the production of solar panels based on weather information taken from OpenMeteo API.
 - `nilm` contains the code that produced the JSON file containing all the machine information and the interface to it.
-- `scheduling_problem` contains both the models for the four phases and the code to solve them
+- `scheduling_problem` contains both the models for the four phases and the code to solve them. The models are available for consultation in the file `models.ipynb`
 
 To understand better the various parts, please refer to the corresponding `README.md` files.

@@ -13,9 +13,10 @@ from combine_data import get_data
 import pandas as pd
 import time
 import sys
+import os
 
 output_folder = "output/"
-
+os.makedirs(output_folder, exist_ok=True)
 def run_models_1(policies, days=7, date = "2018-01-01"):
 
     output_file = f"results_phase_1.txt"
@@ -207,7 +208,7 @@ def run_models_4(number_of_M_N_per_policy, days=1, date = "2018-01-01"):
             day = pd.to_datetime(date)
             data = get_data(number_of_days=days, day=day)
             
-            if policy == '_4_1_enhanced':
+            if policy == '_4_1_CSP_alternatives':
                 _4_1_CSP_alternatives.solve(M, N, data = data)
             elif policy == '_4_1_adapt':
                 _4_1_adapt.solve(M, N, data = data)

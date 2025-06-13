@@ -659,7 +659,7 @@ class EnhancedLocalSearchRecovery:
         }
 
 
-def solve_enhanced(M, N, data=get_modified_data()):
+def solve(M, N, data=get_modified_data()):
     """Enhanced solving function"""
     print(f"Loading solution and running enhanced local search for M={M}, N={N}")
 
@@ -702,4 +702,4 @@ def solve_enhanced(M, N, data=get_modified_data()):
 
 
 if __name__ == "__main__":
-    solve_enhanced(2491, 166)
+    solve(2491, 166)
